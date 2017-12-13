@@ -224,8 +224,11 @@ public class CameraView extends FrameLayout {
                 return true;
             }
         } else if ((mImpl instanceof Camera1)) {
-            //TODO: Camera 1 zoom
-            return true;
+            if (!((Camera1)mImpl).zoom(event)) {
+                return super.onTouchEvent(event);
+            } else {
+                return true;
+            }
         } else {
             return super.onTouchEvent(event);
         }
