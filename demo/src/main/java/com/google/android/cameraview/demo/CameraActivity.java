@@ -59,8 +59,6 @@ public class CameraActivity extends AppCompatActivity {
     View captureButton;
     View turnButton;
 
-    int facing;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,8 +79,7 @@ public class CameraActivity extends AppCompatActivity {
         turnButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                facing = facing == CameraView.FACING_FRONT ? CameraView.FACING_BACK : CameraView.FACING_FRONT;
-                cameraView.setFacing(facing);
+                cameraView.switchCamera();
             }
         });
 

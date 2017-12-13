@@ -313,6 +313,17 @@ public class CameraView extends FrameLayout {
     }
 
     /**
+     * A more user-friendly version of setFacing.
+     */
+    public void switchCamera () {
+        if (getFacing() == FACING_BACK) {
+            setFacing(FACING_FRONT);
+        } else {
+            setFacing(FACING_BACK);
+        }
+    }
+
+    /**
      * Gets the direction that the current camera faces.
      *
      * @return The camera facing.

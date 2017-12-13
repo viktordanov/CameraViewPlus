@@ -779,8 +779,6 @@ class Camera2 extends CameraViewImpl {
             //Calculate zoom ratio delta
             float ratioDelta = distanceDelta / pixelsPerOneZoomLevel;
 
-            Log.i("zoomDebug", "zoomDistance: " + mZoomDistance + "; realTimeDistance: " + realTimeDistance + "; ratioDelta: " + ratioDelta);
-
             //Prevent over zooming
             if (isZoomIn && zoomLevel + ratioDelta > maximumZoomLevel) {
                 ratioDelta = maximumZoomLevel - zoomLevel;
@@ -803,7 +801,6 @@ class Camera2 extends CameraViewImpl {
                     rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
             mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
-            Log.i("zoom", zoom.toString());
 
             mZoomDistance = realTimeDistance;
             return true;
@@ -821,67 +818,9 @@ class Camera2 extends CameraViewImpl {
         }
     }
 
-//    public boolean zoomOld (MotionEvent event) {
-//        int action = event.getAction();
-//        try {
-//            Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-//            if (rect == null) return false;
-//            float currentFingerSpacing;
-//
-//            if (maximumZoomLevel == null) {
-//                maximumZoomLevel = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
-//            }
-//
-//            float tempDelta = delta;
-//
-//            if (event.getPointerCount() == 2) { //Multi touch.
-//                if (action == MotionEvent.ACTION_POINTER_UP) {
-//                    mZoomDistance = 0f;
-//                }
-//                currentFingerSpacing = getFingerSpacing(event);
-//                if (mZoomDistance != 0f) {
-//                    if (currentFingerSpacing > mZoomDistance) {
-//                        if ((maximumZoomLevel - zoomLevel) <= delta) {
-//                            tempDelta = maximumZoomLevel - zoomLevel;
-//                        }
-//                        zoomLevel = zoomLevel + tempDelta;
-//                    } else if (currentFingerSpacing < mZoomDistance){
-//                        if ((zoomLevel - delta) < 1f) {
-//                            tempDelta = zoomLevel - 1f;
-//                        }
-//                        zoomLevel = zoomLevel - tempDelta;
-//                    }
-//                    float ratio = (float) 1 / zoomLevel;
-//                    int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
-//                    int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
-//                    zoom = new Rect(croppedWidth/2, croppedHeight/2,
-//                            rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
-//                    mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-//                }
-//                mZoomDistance = currentFingerSpacing;
-//            } else { //Single touch point, needs to return true in order to detect one more touch point
-//                return true;
-//            }
-//            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
-//            return true;
-//        } catch (final Exception e) {
-//            if (BuildConfig.DEBUG) e.printStackTrace();
-//            if (cameraErrorCallback != null) {
-//                mPreview.getView().post(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        cameraErrorCallback.onCameraError(e);
-//                    }
-//                });
-//            }
-//            return true;
-//        }
-//    }
-
     @Override
     void onPinchFingerUp() {
         mZoomDistance = null;
-        Log.i("zoomDebug", "Finger up");
     }
 
     void resetZoom () {
