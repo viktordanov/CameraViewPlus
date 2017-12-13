@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -190,7 +189,7 @@ public class CameraActivity extends AppCompatActivity {
             try {
                 fos.close();
             } catch (Exception e) {
-                Log.d("MiniGame", "Tried to close FileOutputStream");
+                e.printStackTrace();
             }
         }
         return file.getAbsolutePath();
