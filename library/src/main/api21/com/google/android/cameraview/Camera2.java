@@ -107,10 +107,16 @@ class Camera2 extends CameraViewImpl {
             try {
                 mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
                         mCaptureCallback, null);
-            } catch (CameraAccessException e) {
-                Log.e(TAG, "Failed to start camera preview because it couldn't access camera", e);
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "Failed to start camera preview.", e);
+            } catch (final Exception e) {
+                if (BuildConfig.DEBUG) e.printStackTrace();
+                if (cameraErrorCallback != null) {
+                    mPreview.getView().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            cameraErrorCallback.onCameraError(e);
+                        }
+                    });
+                }
             }
         }
 
@@ -139,8 +145,16 @@ class Camera2 extends CameraViewImpl {
                 mCaptureSession.capture(mPreviewRequestBuilder.build(), this, null);
                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                         CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE);
-            } catch (CameraAccessException e) {
-                Log.e(TAG, "Failed to run precapture sequence.", e);
+            } catch (final Exception e) {
+                if (BuildConfig.DEBUG) e.printStackTrace();
+                if (cameraErrorCallback != null) {
+                    mPreview.getView().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            cameraErrorCallback.onCameraError(e);
+                        }
+                    });
+                }
             }
         }
 
@@ -465,8 +479,16 @@ class Camera2 extends CameraViewImpl {
     private void startOpeningCamera() {
         try {
             mCameraManager.openCamera(mCameraId, mCameraDeviceCallback, null);
-        } catch (CameraAccessException e) {
-            throw new RuntimeException("Failed to open camera: " + mCameraId, e);
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
         }
     }
 
@@ -487,8 +509,16 @@ class Camera2 extends CameraViewImpl {
             mPreviewRequestBuilder.addTarget(surface);
             mCamera.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     mSessionCallback, null);
-        } catch (CameraAccessException e) {
-            throw new RuntimeException("Failed to start camera session");
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
         }
     }
 
@@ -590,8 +620,16 @@ class Camera2 extends CameraViewImpl {
         try {
             mCaptureCallback.setState(PictureCaptureCallback.STATE_LOCKING);
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, null);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "Failed to lock focus.", e);
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
         }
     }
 
@@ -664,8 +702,16 @@ class Camera2 extends CameraViewImpl {
                             unlockFocus();
                         }
                     }, null);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "Cannot capture a still picture.", e);
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
         }
     }
 
@@ -685,8 +731,16 @@ class Camera2 extends CameraViewImpl {
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback,
                     null);
             mCaptureCallback.setState(PictureCaptureCallback.STATE_PREVIEW);
-        } catch (CameraAccessException e) {
-            Log.e(TAG, "Failed to restart camera preview.", e);
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
         }
     }
 
@@ -741,7 +795,15 @@ class Camera2 extends CameraViewImpl {
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
             return true;
         } catch (final Exception e) {
-            Log.e("CameraView", e.getMessage());
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
             return true;
         }
     }

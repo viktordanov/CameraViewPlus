@@ -105,6 +105,12 @@ public class CameraActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
             }
         });
+        cameraView.setOnCameraErrorListener(new CameraViewImpl.OnCameraErrorListener() {
+            @Override
+            public void onCameraError(Exception e) {
+                Toast.makeText(CameraActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
