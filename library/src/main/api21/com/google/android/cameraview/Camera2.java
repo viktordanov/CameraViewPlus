@@ -193,6 +193,7 @@ class Camera2 extends CameraViewImpl {
     private AspectRatio mAspectRatio = Constants.DEFAULT_ASPECT_RATIO;
 
     private boolean mAutoFocus;
+    private boolean mAutoFocusSetting;
 
     private int mFlash;
 
@@ -292,6 +293,7 @@ class Camera2 extends CameraViewImpl {
             return;
         }
         mAutoFocus = autoFocus;
+        mAutoFocusSetting = autoFocus;
         if (mPreviewRequestBuilder != null) {
             updateAutoFocus();
             if (mCaptureSession != null) {
@@ -522,7 +524,7 @@ class Camera2 extends CameraViewImpl {
      * Updates the internal state of auto-focus to {@link #mAutoFocus}.
      */
     void updateAutoFocus() {
-        if (mAutoFocus) {
+        if (mAutoFocusSetting) {
             int[] modes = mCameraCharacteristics.get(
                     CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
             // Auto focus is not supported
