@@ -29,6 +29,7 @@ import android.support.v4.os.ParcelableCompat;
 import android.support.v4.os.ParcelableCompatCreatorCallbacks;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import java.lang.annotation.Retention;
@@ -211,6 +212,22 @@ public class CameraView extends FrameLayout {
                     MeasureSpec.makeMeasureSpec(height * ratio.getX() / ratio.getY(),
                             MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
+        }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if ((mImpl instanceof Camera2)) {
+            if (!((Camera2)mImpl).zoom(event)) {
+                return super.onTouchEvent(event);
+            } else {
+                return true;
+            }
+        } else if ((mImpl instanceof Camera1)) {
+            //TODO: Camera 1 zoom
+            return true;
+        } else {
+            return super.onTouchEvent(event);
         }
     }
 

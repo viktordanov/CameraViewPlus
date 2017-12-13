@@ -19,6 +19,7 @@ package com.google.android.cameraview;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -33,6 +34,7 @@ import android.media.ImageReader;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.SparseIntArray;
+import android.view.MotionEvent;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -232,6 +234,7 @@ class Camera2 extends CameraViewImpl {
             mImageReader.close();
             mImageReader = null;
         }
+        resetZoom();
     }
 
     @Override
@@ -600,6 +603,9 @@ class Camera2 extends CameraViewImpl {
             captureRequestBuilder.addTarget(mImageReader.getSurface());
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     mPreviewRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE));
+            if (zoom != null) {
+                captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+            }
             switch (mFlash) {
                 case Constants.FLASH_OFF:
                     captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
@@ -669,6 +675,74 @@ class Camera2 extends CameraViewImpl {
         } catch (CameraAccessException e) {
             Log.e(TAG, "Failed to restart camera preview.", e);
         }
+    }
+
+    //Zooming
+    protected float delta = 0.05f;
+    protected float fingerSpacing = 0f;
+    protected float zoomLevel = 1f;
+    protected Float maximumZoomLevel;
+    protected Rect zoom;
+
+    public boolean zoom (MotionEvent event) {
+        int action = event.getAction();
+        try {
+            Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+            if (rect == null) return false;
+            float currentFingerSpacing;
+
+            if (maximumZoomLevel == null) {
+                maximumZoomLevel = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
+            }
+
+            float tempDelta = delta;
+
+            if (event.getPointerCount() == 2) { //Multi touch.
+                if (action == MotionEvent.ACTION_POINTER_UP) {
+                    fingerSpacing = 0f;
+                }
+                currentFingerSpacing = getFingerSpacing(event);
+                if (fingerSpacing != 0f) {
+                    if (currentFingerSpacing > fingerSpacing) {
+                        if ((maximumZoomLevel - zoomLevel) <= delta) {
+                            tempDelta = maximumZoomLevel - zoomLevel;
+                        }
+                        zoomLevel = zoomLevel + tempDelta;
+                    } else if (currentFingerSpacing < fingerSpacing){
+                        if ((zoomLevel - delta) < 1f) {
+                            tempDelta = zoomLevel - 1f;
+                        }
+                        zoomLevel = zoomLevel - tempDelta;
+                    }
+                    float ratio = (float) 1 / zoomLevel;
+                    int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
+                    int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
+                    zoom = new Rect(croppedWidth/2, croppedHeight/2,
+                            rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
+                    mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+                }
+                fingerSpacing = currentFingerSpacing;
+            } else { //Single touch point, needs to return true in order to detect one more touch point
+                return true;
+            }
+            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+            return true;
+        } catch (final Exception e) {
+            Log.e("CameraView", e.getMessage());
+            return true;
+        }
+    }
+
+    void resetZoom () {
+        zoomLevel = 1f;
+        zoom = null;
+        fingerSpacing = 0f;
+    }
+
+    private float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
     }
 
     /**
