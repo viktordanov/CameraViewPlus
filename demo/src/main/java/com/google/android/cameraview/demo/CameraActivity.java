@@ -81,32 +81,6 @@ public class CameraActivity extends AppCompatActivity {
                 cameraView.switchCamera();
             }
         });
-
-        cameraView.setOnPictureTakenListener(new CameraViewImpl.OnPictureTakenListener() {
-            @Override
-            public void onPictureTaken(Bitmap bitmap) {
-                startSavingPhoto(bitmap);
-            }
-        });
-        cameraView.setOnFocusLockedListener(new CameraViewImpl.OnFocusLockedListener() {
-            @Override
-            public void onFocusLocked() {
-                playShutterAnimation();
-            }
-        });
-        cameraView.setOnTurnCameraFailListener(new CameraViewImpl.OnTurnCameraFailListener() {
-            @Override
-            public void onTurnCameraFail(Exception e) {
-                Toast.makeText(CameraActivity.this, "Switch Camera Failed. Does you device has a front camera?",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-        cameraView.setOnCameraErrorListener(new CameraViewImpl.OnCameraErrorListener() {
-            @Override
-            public void onCameraError(Exception e) {
-                Toast.makeText(CameraActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     @Override
@@ -114,6 +88,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onResume();
         if (PermissionUtils.isStorageGranted(this) && PermissionUtils.isCameraGranted(this)) {
             cameraView.start();
+            setupCameraCallbacks();
         } else {
             if (!PermissionUtils.isCameraGranted(this)) {
                 PermissionUtils.checkPermission(this, Manifest.permission.CAMERA,
@@ -145,6 +120,34 @@ public class CameraActivity extends AppCompatActivity {
     protected void onPause() {
         cameraView.stop();
         super.onPause();
+    }
+
+    private void setupCameraCallbacks () {
+        cameraView.setOnPictureTakenListener(new CameraViewImpl.OnPictureTakenListener() {
+            @Override
+            public void onPictureTaken(Bitmap bitmap) {
+                startSavingPhoto(bitmap);
+            }
+        });
+        cameraView.setOnFocusLockedListener(new CameraViewImpl.OnFocusLockedListener() {
+            @Override
+            public void onFocusLocked() {
+                playShutterAnimation();
+            }
+        });
+        cameraView.setOnTurnCameraFailListener(new CameraViewImpl.OnTurnCameraFailListener() {
+            @Override
+            public void onTurnCameraFail(Exception e) {
+                Toast.makeText(CameraActivity.this, "Switch Camera Failed. Does you device has a front camera?",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+        cameraView.setOnCameraErrorListener(new CameraViewImpl.OnCameraErrorListener() {
+            @Override
+            public void onCameraError(Exception e) {
+                Toast.makeText(CameraActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void playShutterAnimation () {
