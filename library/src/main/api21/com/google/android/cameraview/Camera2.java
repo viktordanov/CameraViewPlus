@@ -73,13 +73,11 @@ class Camera2 extends CameraViewImpl {
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
             mCamera = camera;
-            mCallback.onCameraOpened();
             startCaptureSession();
         }
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
-            mCallback.onCameraClosed();
         }
 
         @Override
@@ -164,7 +162,7 @@ class Camera2 extends CameraViewImpl {
                     ByteBuffer buffer = planes[0].getBuffer();
                     byte[] data = new byte[buffer.remaining()];
                     buffer.get(data);
-                    mCallback.onPictureTaken(data);
+                    byteArrayToBitmap(data);
                 }
             }
         }
@@ -199,8 +197,8 @@ class Camera2 extends CameraViewImpl {
 
     private int mDisplayOrientation;
 
-    Camera2(Callback callback, PreviewImpl preview, Context context) {
-        super(callback, preview);
+    Camera2(PreviewImpl preview, Context context) {
+        super(preview);
         mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         mPreview.setCallback(new PreviewImpl.Callback() {
             @Override

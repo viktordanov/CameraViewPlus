@@ -34,7 +34,6 @@ import android.widget.FrameLayout;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 import java.util.Set;
 
 public class CameraView extends FrameLayout {
@@ -73,8 +72,6 @@ public class CameraView extends FrameLayout {
 
     CameraViewImpl mImpl;
 
-    private final CallbackBridge mCallbacks;
-
     private boolean mAdjustViewBounds;
 
     private final DisplayOrientationDetector mDisplayOrientationDetector;
@@ -91,19 +88,17 @@ public class CameraView extends FrameLayout {
     public CameraView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         if (isInEditMode()){
-            mCallbacks = null;
             mDisplayOrientationDetector = null;
             return;
         }
         // Internal setup
         final PreviewImpl preview = createPreviewImpl(context);
-        mCallbacks = new CallbackBridge();
         if (Build.VERSION.SDK_INT < 21) {
-            mImpl = new Camera1(mCallbacks, preview);
+            mImpl = new Camera1(preview);
         } else if (Build.VERSION.SDK_INT < 23) {
-            mImpl = new Camera2(mCallbacks, preview, context);
+            mImpl = new Camera2(preview, context);
         } else {
-            mImpl = new Camera2Api23(mCallbacks, preview, context);
+            mImpl = new Camera2Api23(preview, context);
         }
         // Attributes
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CameraView, defStyleAttr,
@@ -164,7 +159,6 @@ public class CameraView extends FrameLayout {
         // Handle android:adjustViewBounds
         if (mAdjustViewBounds) {
             if (!isCameraOpened()) {
-                mCallbacks.reserveRequestLayoutOnOpen();
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
                 return;
             }
@@ -267,7 +261,7 @@ public class CameraView extends FrameLayout {
             //store the state ,and restore this state after fall back o Camera1
             Parcelable state=onSaveInstanceState();
             // Camera2 uses legacy hardware layer; fall back to Camera1
-            mImpl = new Camera1(mCallbacks, createPreviewImpl(getContext()));
+            mImpl = new Camera1(createPreviewImpl(getContext()));
             onRestoreInstanceState(state);
             mImpl.start();
         }
@@ -286,26 +280,6 @@ public class CameraView extends FrameLayout {
      */
     public boolean isCameraOpened() {
         return mImpl.isCameraOpened();
-    }
-
-    /**
-     * Add a new callback.
-     *
-     * @param callback The {@link Callback} to add.
-     * @see #removeCallback(Callback)
-     */
-    public void addCallback(@NonNull Callback callback) {
-        mCallbacks.add(callback);
-    }
-
-    /**
-     * Remove a callback.
-     *
-     * @param callback The {@link Callback} to remove.
-     * @see #addCallback(Callback)
-     */
-    public void removeCallback(@NonNull Callback callback) {
-        mCallbacks.remove(callback);
     }
 
     /**
@@ -419,59 +393,14 @@ public class CameraView extends FrameLayout {
         return mImpl.getFlash();
     }
 
-    /**
-     * Take a picture. The result will be returned to
-     * {@link Callback#onPictureTaken(CameraView, byte[])}.
-     */
-    public void takePicture() {
-        mImpl.takePicture();
+    public void setOnPictureTakenListener (CameraViewImpl.OnPictureTakenListener pictureTakenListener) {
+        if (mImpl != null) {
+            mImpl.setOnPictureTakenListener(pictureTakenListener);
+        }
     }
 
-    private class CallbackBridge implements CameraViewImpl.Callback {
-
-        private final ArrayList<Callback> mCallbacks = new ArrayList<>();
-
-        private boolean mRequestLayoutOnOpen;
-
-        CallbackBridge() {
-        }
-
-        public void add(Callback callback) {
-            mCallbacks.add(callback);
-        }
-
-        public void remove(Callback callback) {
-            mCallbacks.remove(callback);
-        }
-
-        @Override
-        public void onCameraOpened() {
-            if (mRequestLayoutOnOpen) {
-                mRequestLayoutOnOpen = false;
-                requestLayout();
-            }
-            for (Callback callback : mCallbacks) {
-                callback.onCameraOpened(CameraView.this);
-            }
-        }
-
-        @Override
-        public void onCameraClosed() {
-            for (Callback callback : mCallbacks) {
-                callback.onCameraClosed(CameraView.this);
-            }
-        }
-
-        @Override
-        public void onPictureTaken(byte[] data) {
-            for (Callback callback : mCallbacks) {
-                callback.onPictureTaken(CameraView.this, data);
-            }
-        }
-
-        public void reserveRequestLayoutOnOpen() {
-            mRequestLayoutOnOpen = true;
-        }
+    public void takePicture() {
+        mImpl.takePicture();
     }
 
     protected static class SavedState extends BaseSavedState {
@@ -523,38 +452,6 @@ public class CameraView extends FrameLayout {
 
         });
 
-    }
-
-    /**
-     * Callback for monitoring events about {@link CameraView}.
-     */
-    @SuppressWarnings("UnusedParameters")
-    public abstract static class Callback {
-
-        /**
-         * Called when camera is opened.
-         *
-         * @param cameraView The associated {@link CameraView}.
-         */
-        public void onCameraOpened(CameraView cameraView) {
-        }
-
-        /**
-         * Called when camera is closed.
-         *
-         * @param cameraView The associated {@link CameraView}.
-         */
-        public void onCameraClosed(CameraView cameraView) {
-        }
-
-        /**
-         * Called when a picture is taken.
-         *
-         * @param cameraView The associated {@link CameraView}.
-         * @param data       JPEG data.
-         */
-        public void onPictureTaken(CameraView cameraView, byte[] data) {
-        }
     }
 
 }

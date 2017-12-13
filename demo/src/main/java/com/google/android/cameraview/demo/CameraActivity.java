@@ -31,6 +31,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.cameraview.CameraView;
+import com.google.android.cameraview.CameraViewImpl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -81,15 +82,10 @@ public class CameraActivity extends AppCompatActivity {
             }
         });
 
-        cameraView.addCallback(new CameraView.Callback() {
+        cameraView.setOnPictureTakenListener(new CameraViewImpl.OnPictureTakenListener() {
             @Override
-            public void onPictureTaken(CameraView cameraView, byte[] data) {
-                byteArrayToBitmap(data, new CameraUtils.BitmapCallback() {
-                    @Override
-                    public void onBitmapReady(Bitmap bitmap) {
-                        startSavingPhoto(bitmap);
-                    }
-                });
+            public void onPictureTaken(Bitmap bitmap) {
+                startSavingPhoto(bitmap);
             }
         });
     }

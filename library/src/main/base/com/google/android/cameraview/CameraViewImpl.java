@@ -16,23 +16,47 @@
 
 package com.google.android.cameraview;
 
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.view.View;
 
 import java.util.Set;
 
-abstract class CameraViewImpl {
+public abstract class CameraViewImpl {
 
-    protected final Callback mCallback;
+    protected OnPictureTakenListener pictureCallback;
+    protected OnTurnCameraFailListener turnFailCallback;
+    protected OnCameraErrorListener cameraErrorCallback;
+    protected OnFocusLockedListener focusLockedCallback;
+    protected CameraUtils.BitmapCallback bitmapDecodedCallback = new CameraUtils.BitmapCallback() {
+        @Override
+        public void onBitmapReady(Bitmap bitmap) {
+            if (getFacing() == CameraView.FACING_FRONT) {
+                if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap));
+            } else {
+                if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap);
+            }
+        }
+    };
 
     protected final PreviewImpl mPreview;
 
-    CameraViewImpl(Callback callback, PreviewImpl preview) {
-        mCallback = callback;
+    CameraViewImpl(PreviewImpl preview) {
         mPreview = preview;
     }
 
     View getView() {
         return mPreview.getView();
+    }
+
+    private Bitmap mirrorBitmap (Bitmap bitmap) {
+        Matrix matrix = new Matrix();
+        matrix.preScale(-1.0f, 1.0f);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
+    public void setOnPictureTakenListener (OnPictureTakenListener pictureCallback) {
+        this.pictureCallback = pictureCallback;
     }
 
     /**
@@ -69,14 +93,24 @@ abstract class CameraViewImpl {
 
     abstract void setDisplayOrientation(int displayOrientation);
 
-    interface Callback {
+    protected void byteArrayToBitmap (byte[] data) {
+        CameraUtils.decodeBitmap(data, bitmapDecodedCallback);
+    }
 
-        void onCameraOpened();
+    public interface OnPictureTakenListener {
+        void onPictureTaken (Bitmap bitmap);
+    }
 
-        void onCameraClosed();
+    public interface OnTurnCameraFailListener {
+        void onTurnCameraFail (Exception e);
+    }
 
-        void onPictureTaken(byte[] data);
+    public interface OnCameraErrorListener {
+        void onCameraError (Exception e);
+    }
 
+    public interface OnFocusLockedListener {
+        void onFocusLocked ();
     }
 
 }

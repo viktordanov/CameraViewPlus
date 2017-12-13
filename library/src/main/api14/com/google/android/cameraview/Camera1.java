@@ -76,8 +76,8 @@ class Camera1 extends CameraViewImpl {
     protected Float mZoomDistance;
     protected int mMinimumZoomDelta = 50;
 
-    Camera1(Callback callback, PreviewImpl preview) {
-        super(callback, preview);
+    Camera1(PreviewImpl preview) {
+        super(preview);
         preview.setCallback(new PreviewImpl.Callback() {
             @Override
             public void onSurfaceChanged() {
@@ -247,7 +247,7 @@ class Camera1 extends CameraViewImpl {
                 @Override
                 public void onPictureTaken(byte[] data, Camera camera) {
                     isPictureCaptureInProgress.set(false);
-                    mCallback.onPictureTaken(data);
+                    byteArrayToBitmap(data);
                     camera.cancelAutoFocus();
                     camera.startPreview();
                 }
@@ -311,7 +311,6 @@ class Camera1 extends CameraViewImpl {
         }
         adjustCameraParameters();
         mCamera.setDisplayOrientation(calcDisplayOrientation(mDisplayOrientation));
-        mCallback.onCameraOpened();
     }
 
     private AspectRatio chooseAspectRatio() {
@@ -381,7 +380,6 @@ class Camera1 extends CameraViewImpl {
         if (mCamera != null) {
             mCamera.release();
             mCamera = null;
-            mCallback.onCameraClosed();
         }
     }
 
