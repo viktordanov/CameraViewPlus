@@ -18,6 +18,8 @@ package com.google.android.cameraview.demo;
 
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -53,6 +55,7 @@ public class CameraActivity extends AppCompatActivity {
 
     CameraView cameraView;
 
+    View shutterEffect;
     View captureButton;
     View turnButton;
 
@@ -64,6 +67,7 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
 
         cameraView = findViewById(R.id.camera_view);
+        shutterEffect = findViewById(R.id.shutter_effect);
         captureButton = findViewById(R.id.shutter);
         turnButton = findViewById(R.id.turn);
 
@@ -86,6 +90,12 @@ public class CameraActivity extends AppCompatActivity {
             @Override
             public void onPictureTaken(Bitmap bitmap) {
                 startSavingPhoto(bitmap);
+            }
+        });
+        cameraView.setOnFocusLockedListener(new CameraViewImpl.OnFocusLockedListener() {
+            @Override
+            public void onFocusLocked() {
+                playShutterAnimation();
             }
         });
     }
@@ -126,6 +136,18 @@ public class CameraActivity extends AppCompatActivity {
     protected void onPause() {
         cameraView.stop();
         super.onPause();
+    }
+
+    private void playShutterAnimation () {
+        shutterEffect.setVisibility(View.VISIBLE);
+        shutterEffect.animate().alpha(0f).setDuration(300).setListener(
+                new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        shutterEffect.setVisibility(View.GONE);
+                        shutterEffect.setAlpha(0.8f);
+                    }
+                });
     }
 
     private String bitmapToFile(Bitmap bitmap) {

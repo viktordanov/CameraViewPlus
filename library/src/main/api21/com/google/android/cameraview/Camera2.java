@@ -642,6 +642,17 @@ class Camera2 extends CameraViewImpl {
                             360) % 360);
             // Stop preview and capture a still picture.
             mCaptureSession.stopRepeating();
+
+            //Call Activity to do things when focus is locked
+            if (focusLockedCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        focusLockedCallback.onFocusLocked();
+                    }
+                });
+            }
+
             mCaptureSession.capture(captureRequestBuilder.build(),
                     new CameraCaptureSession.CaptureCallback() {
                         @Override

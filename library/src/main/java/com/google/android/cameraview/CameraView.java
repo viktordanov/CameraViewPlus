@@ -399,6 +399,24 @@ public class CameraView extends FrameLayout {
         }
     }
 
+    public void setOnFocusLockedListener (CameraViewImpl.OnFocusLockedListener focusLockedListener) {
+        if (mImpl != null) {
+            mImpl.setOnFocusLockedListener(focusLockedListener);
+        }
+    }
+
+    public void setOnTurnCameraFailListener (CameraViewImpl.OnTurnCameraFailListener turnCameraFailListener) {
+        if (mImpl != null) {
+            mImpl.setOnTurnCameraFailListener(turnCameraFailListener);
+        }
+    }
+
+    public void setOnCameraErrorListener (CameraViewImpl.OnCameraErrorListener cameraErrorListener) {
+        if (mImpl != null) {
+            mImpl.setOnCameraErrorListener(cameraErrorListener);
+        }
+    }
+
     public void takePicture() {
         mImpl.takePicture();
     }

@@ -59,6 +59,18 @@ public abstract class CameraViewImpl {
         this.pictureCallback = pictureCallback;
     }
 
+    public void setOnFocusLockedListener (OnFocusLockedListener focusLockedListener) {
+        this.focusLockedCallback = focusLockedListener;
+    }
+
+    public void setOnTurnCameraFailListener (OnTurnCameraFailListener turnCameraFailListener) {
+        this.turnFailCallback = turnCameraFailListener;
+    }
+
+    public void setOnCameraErrorListener (OnCameraErrorListener onCameraErrorListener) {
+        this.cameraErrorCallback = onCameraErrorListener;
+    }
+
     /**
      * @return {@code true} if the implementation was able to start the camera session.
      */
