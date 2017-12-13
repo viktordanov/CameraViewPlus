@@ -98,6 +98,13 @@ public class CameraActivity extends AppCompatActivity {
                 playShutterAnimation();
             }
         });
+        cameraView.setOnTurnCameraFailListener(new CameraViewImpl.OnTurnCameraFailListener() {
+            @Override
+            public void onTurnCameraFail(Exception e) {
+                Toast.makeText(CameraActivity.this, "Switch Camera Failed. Does you device has a front camera?",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

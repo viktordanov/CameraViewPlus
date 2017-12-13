@@ -381,6 +381,7 @@ class Camera2 extends CameraViewImpl {
                 }
             }
             // Not found
+            // Added at 2017-12-13 by Sira: Actually I don't understand why the below is needed
             mCameraId = ids[0];
             mCameraCharacteristics = mCameraManager.getCameraCharacteristics(mCameraId);
             Integer level = mCameraCharacteristics.get(
@@ -401,6 +402,7 @@ class Camera2 extends CameraViewImpl {
             }
             // The operation can reach here when the only camera device is an external one.
             // We treat it as facing back.
+            if (turnFailCallback != null) turnFailCallback.onTurnCameraFail(new RuntimeException("Cannot find suitable Camera"));
             mFacing = Constants.FACING_BACK;
             return true;
         } catch (CameraAccessException e) {

@@ -292,6 +292,7 @@ class Camera1 extends CameraViewImpl {
             }
         }
         mCameraId = INVALID_CAMERA_ID;
+        if (turnFailCallback != null) turnFailCallback.onTurnCameraFail(new RuntimeException("Cannot find suitable camera."));
     }
 
     private void openCamera() {
