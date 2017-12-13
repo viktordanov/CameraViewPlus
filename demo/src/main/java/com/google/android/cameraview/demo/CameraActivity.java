@@ -128,10 +128,6 @@ public class CameraActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    private void byteArrayToBitmap (byte[] byteArray, CameraUtils.BitmapCallback bitmapCallback) {
-        CameraUtils.decodeBitmap(byteArray, bitmapCallback);
-    }
-
     private String bitmapToFile(Bitmap bitmap) {
         //create a file to write bitmap data
         Date currentTime = Calendar.getInstance().getTime();
