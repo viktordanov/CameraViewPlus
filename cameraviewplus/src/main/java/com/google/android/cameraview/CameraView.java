@@ -105,7 +105,7 @@ public class CameraView extends FrameLayout {
                 R.style.Widget_CameraView);
         mAdjustViewBounds = a.getBoolean(R.styleable.CameraView_android_adjustViewBounds, false);
         setFacing(a.getInt(R.styleable.CameraView_facing, FACING_BACK));
-        String aspectRatio = a.getString(R.styleable.CameraView_aspectRatio);
+        String aspectRatio = a.getString(R.styleable.CameraView_cameraAspectRatio);
         if (aspectRatio != null) {
             setAspectRatio(AspectRatio.parse(aspectRatio));
         } else {
