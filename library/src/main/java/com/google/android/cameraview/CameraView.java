@@ -209,22 +209,21 @@ public class CameraView extends FrameLayout {
         }
     }
 
+    //Handle Pinch Zoom
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if ((mImpl instanceof Camera2)) {
-            if (!((Camera2)mImpl).zoom(event)) {
-                return super.onTouchEvent(event);
+        if (mImpl == null) return super.onTouchEvent(event);
+
+        int action = event.getActionMasked();
+        if (event.getPointerCount() == 2) { //Multi touch.
+            if (action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_UP) {
+                mImpl.onPinchFingerUp();
             } else {
-                return true;
+                mImpl.zoom(event);
             }
-        } else if ((mImpl instanceof Camera1)) {
-            if (!((Camera1)mImpl).zoom(event)) {
-                return super.onTouchEvent(event);
-            } else {
-                return true;
-            }
-        } else {
-            return super.onTouchEvent(event);
+            return true;
+        } else { //Single touch point, needs to return true in order to detect one more touch point
+            return true;
         }
     }
 

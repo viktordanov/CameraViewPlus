@@ -73,7 +73,6 @@ class Camera1 extends CameraViewImpl {
 
     //Zoom
     protected Float mZoomDistance;
-    protected int mMinimumZoomDelta = 50;
 
     Camera1(PreviewImpl preview) {
         super(preview);
@@ -567,18 +566,34 @@ class Camera1 extends CameraViewImpl {
         }
     }
 
-    public boolean zoom (MotionEvent event) {
-        int action = event.getAction();
+    @Override
+    boolean zoom(MotionEvent event) {
         try {
-            Camera.Parameters parameters = mCamera.getParameters();
-            if (event.getPointerCount() == 2) { //Multi touch.
-                if (action == MotionEvent.ACTION_POINTER_UP) {
-                    mZoomDistance = null; //Reset zoom memory if finger is up
-                } else {
-                    handleZoom(event, parameters);
-                }
-            } else { //Single touch point, needs to return true in order to detect one more touch point
+            Camera.Parameters params = mCamera.getParameters();
+            int maxZoom = params.getMaxZoom();
+            int zoom = params.getZoom();
+            float realTimeDistance = getFingerSpacing(event);
+            if (mZoomDistance == null) {
+                mZoomDistance = realTimeDistance;
                 return true;
+            }
+
+            boolean needZoom = false;
+            if (realTimeDistance - mZoomDistance >= pixelsPerOneZoomLevel) {
+                //zoom in
+                if (zoom < maxZoom) zoom++;
+                needZoom = true;
+            } else if (mZoomDistance - realTimeDistance >= pixelsPerOneZoomLevel) {
+                //zoom out
+                if (zoom > 0) zoom--;
+                needZoom = true;
+            } else {
+                //Do nothing since the difference is not large enough
+            }
+            if (needZoom) {
+                mZoomDistance = realTimeDistance;
+                params.setZoom(zoom);
+                mCamera.setParameters(params);
             }
             return true;
         } catch (final Exception e) {
@@ -595,39 +610,9 @@ class Camera1 extends CameraViewImpl {
         }
     }
 
-    private void handleZoom(MotionEvent event, Camera.Parameters params) {
-        int maxZoom = params.getMaxZoom();
-        int zoom = params.getZoom();
-        float newDist = getFingerSpacing(event);
-        if (mZoomDistance == null) {
-            mZoomDistance = newDist;
-            return;
-        }
-        float realTimeDistance = newDist;
-
-        boolean needZoom = false;
-        if (realTimeDistance - mZoomDistance >= mMinimumZoomDelta) {
-            //zoom in
-            if (zoom < maxZoom) zoom++;
-            needZoom = true;
-        } else if (mZoomDistance - realTimeDistance >= mMinimumZoomDelta) {
-            //zoom out
-            if (zoom > 0) zoom--;
-            needZoom = true;
-        } else {
-            //Do nothing since the difference is not large enough
-        }
-        if (needZoom) {
-            mZoomDistance = realTimeDistance;
-            params.setZoom(zoom);
-            mCamera.setParameters(params);
-        }
-    }
-
-    private float getFingerSpacing(MotionEvent event) {
-        float x = event.getX(0) - event.getX(1);
-        float y = event.getY(0) - event.getY(1);
-        return (float) Math.sqrt(x * x + y * y);
+    @Override
+    void onPinchFingerUp() {
+        mZoomDistance = null; //Reset zoom memory if finger is up
     }
 
 }

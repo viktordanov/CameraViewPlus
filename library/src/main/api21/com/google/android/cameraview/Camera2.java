@@ -745,54 +745,67 @@ class Camera2 extends CameraViewImpl {
     }
 
     //Zooming
-    protected float delta = 0.05f;
-    protected float fingerSpacing = 0f;
+    protected Float mZoomDistance;
     protected float zoomLevel = 1f;
     protected Float maximumZoomLevel;
     protected Rect zoom;
 
-    public boolean zoom (MotionEvent event) {
-        int action = event.getAction();
+    @Override
+    boolean zoom(MotionEvent event) {
         try {
+            //Gather camera information for zooming
             Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
             if (rect == null) return false;
-            float currentFingerSpacing;
-
             if (maximumZoomLevel == null) {
                 maximumZoomLevel = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
             }
 
-            float tempDelta = delta;
-
-            if (event.getPointerCount() == 2) { //Multi touch.
-                if (action == MotionEvent.ACTION_POINTER_UP) {
-                    fingerSpacing = 0f;
-                }
-                currentFingerSpacing = getFingerSpacing(event);
-                if (fingerSpacing != 0f) {
-                    if (currentFingerSpacing > fingerSpacing) {
-                        if ((maximumZoomLevel - zoomLevel) <= delta) {
-                            tempDelta = maximumZoomLevel - zoomLevel;
-                        }
-                        zoomLevel = zoomLevel + tempDelta;
-                    } else if (currentFingerSpacing < fingerSpacing){
-                        if ((zoomLevel - delta) < 1f) {
-                            tempDelta = zoomLevel - 1f;
-                        }
-                        zoomLevel = zoomLevel - tempDelta;
-                    }
-                    float ratio = (float) 1 / zoomLevel;
-                    int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
-                    int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
-                    zoom = new Rect(croppedWidth/2, croppedHeight/2,
-                            rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
-                    mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-                }
-                fingerSpacing = currentFingerSpacing;
-            } else { //Single touch point, needs to return true in order to detect one more touch point
+            //Prepare finger distance for zooming
+            float realTimeDistance = getFingerSpacing(event);
+            if (mZoomDistance == null) {
+                mZoomDistance = realTimeDistance;
                 return true;
             }
+            float distanceDelta;
+            boolean isZoomIn;
+            if (realTimeDistance >= mZoomDistance) {
+                isZoomIn = true;
+                distanceDelta = realTimeDistance - mZoomDistance;
+            } else { //Zoom out
+                isZoomIn = false;
+                distanceDelta = mZoomDistance - realTimeDistance;
+            }
+
+            //Calculate zoom ratio delta
+            float ratioDelta = distanceDelta / pixelsPerOneZoomLevel;
+
+            Log.i("zoomDebug", "zoomDistance: " + mZoomDistance + "; realTimeDistance: " + realTimeDistance + "; ratioDelta: " + ratioDelta);
+
+            //Prevent over zooming
+            if (isZoomIn && zoomLevel + ratioDelta > maximumZoomLevel) {
+                ratioDelta = maximumZoomLevel - zoomLevel;
+            } else if (!isZoomIn && zoomLevel - ratioDelta < 1f) {
+                ratioDelta = zoomLevel - 1f;
+            }
+
+            //Modify current zoomLevel
+            if (isZoomIn) {
+                zoomLevel += ratioDelta;
+            } else {
+                zoomLevel -= ratioDelta;
+            }
+
+            //Finally we can zoom
+            float ratio = (float) 1 / zoomLevel;
+            int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
+            int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
+            zoom = new Rect(croppedWidth/2, croppedHeight/2,
+                    rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
+            mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+            Log.i("zoom", zoom.toString());
+
+            mZoomDistance = realTimeDistance;
             return true;
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
@@ -804,20 +817,77 @@ class Camera2 extends CameraViewImpl {
                     }
                 });
             }
-            return true;
+            return false;
         }
+    }
+
+//    public boolean zoomOld (MotionEvent event) {
+//        int action = event.getAction();
+//        try {
+//            Rect rect = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+//            if (rect == null) return false;
+//            float currentFingerSpacing;
+//
+//            if (maximumZoomLevel == null) {
+//                maximumZoomLevel = (mCameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM));
+//            }
+//
+//            float tempDelta = delta;
+//
+//            if (event.getPointerCount() == 2) { //Multi touch.
+//                if (action == MotionEvent.ACTION_POINTER_UP) {
+//                    mZoomDistance = 0f;
+//                }
+//                currentFingerSpacing = getFingerSpacing(event);
+//                if (mZoomDistance != 0f) {
+//                    if (currentFingerSpacing > mZoomDistance) {
+//                        if ((maximumZoomLevel - zoomLevel) <= delta) {
+//                            tempDelta = maximumZoomLevel - zoomLevel;
+//                        }
+//                        zoomLevel = zoomLevel + tempDelta;
+//                    } else if (currentFingerSpacing < mZoomDistance){
+//                        if ((zoomLevel - delta) < 1f) {
+//                            tempDelta = zoomLevel - 1f;
+//                        }
+//                        zoomLevel = zoomLevel - tempDelta;
+//                    }
+//                    float ratio = (float) 1 / zoomLevel;
+//                    int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
+//                    int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
+//                    zoom = new Rect(croppedWidth/2, croppedHeight/2,
+//                            rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
+//                    mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
+//                }
+//                mZoomDistance = currentFingerSpacing;
+//            } else { //Single touch point, needs to return true in order to detect one more touch point
+//                return true;
+//            }
+//            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+//            return true;
+//        } catch (final Exception e) {
+//            if (BuildConfig.DEBUG) e.printStackTrace();
+//            if (cameraErrorCallback != null) {
+//                mPreview.getView().post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        cameraErrorCallback.onCameraError(e);
+//                    }
+//                });
+//            }
+//            return true;
+//        }
+//    }
+
+    @Override
+    void onPinchFingerUp() {
+        mZoomDistance = null;
+        Log.i("zoomDebug", "Finger up");
     }
 
     void resetZoom () {
         zoomLevel = 1f;
         zoom = null;
-        fingerSpacing = 0f;
-    }
-
-    private float getFingerSpacing(MotionEvent event) {
-        float x = event.getX(0) - event.getX(1);
-        float y = event.getY(0) - event.getY(1);
-        return (float) Math.sqrt(x * x + y * y);
+        mZoomDistance = 0f;
     }
 
     /**

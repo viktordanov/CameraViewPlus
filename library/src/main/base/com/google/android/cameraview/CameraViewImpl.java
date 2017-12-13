@@ -18,11 +18,17 @@ package com.google.android.cameraview;
 
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.Set;
 
 public abstract class CameraViewImpl {
+
+    /**
+     * The distance between 2 fingers (in pixel) needed in order for zoom level to increase by 1x.
+     */
+    protected int pixelsPerOneZoomLevel = 80;
 
     protected OnPictureTakenListener pictureCallback;
     protected OnTurnCameraFailListener turnFailCallback;
@@ -105,8 +111,26 @@ public abstract class CameraViewImpl {
 
     abstract void setDisplayOrientation(int displayOrientation);
 
+    /**
+     * @return {@code true} if the motionEvent is consumed.
+     */
+    abstract boolean zoom (MotionEvent event);
+
+    abstract void onPinchFingerUp ();
+
+    protected float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
     protected void byteArrayToBitmap (byte[] data) {
         CameraUtils.decodeBitmap(data, bitmapDecodedCallback);
+    }
+
+    public void setPixelsPerOneZoomLevel (int pixels) {
+        if (pixels <= 0) return;
+        pixelsPerOneZoomLevel = pixels;
     }
 
     public interface OnPictureTakenListener {
