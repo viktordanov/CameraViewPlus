@@ -221,3 +221,17 @@ The reaon is the combination of the below facts:
 So, thanks to this [CameraView](https://github.com/natario1/CameraView), I copied his method of solving this problem - reading EXIF attributes from byte[], and then rotate the Bitmap itself according to those EXIF attributes.
 
 Therefore, you will find that the Bitmap produces by this library (taken in portrait mode) has a smaller width than height. This is because the image has already been rotated.
+
+### Why a shutter sound is played in some devices?
+
+As far as I know, this happens if your device has API Level >= 21, but still using Camera1 API.  
+This happens if  
+1. Your device has a [LEGACY](https://source.android.com/devices/camera/versioning#glossary) camera, or;
+2. You have force to use Camera1 on this device.  
+And, again, as far as I know, you can do nothing about it.  
+
+Please let me know if you know there is a way to turn it off!
+
+## License
+
+Since this is a fork of Google's CameraView, license follows the [original one](https://github.com/google/cameraview/blob/master/LICENSE).
