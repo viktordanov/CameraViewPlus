@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import com.google.android.cameraview.CameraView;
 import com.google.android.cameraview.CameraViewImpl;
+import com.jaredrummler.android.device.DeviceName;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -67,6 +68,11 @@ public class CameraActivity extends AppCompatActivity {
         shutterEffect = findViewById(R.id.shutter_effect);
         captureButton = findViewById(R.id.shutter);
         turnButton = findViewById(R.id.turn);
+
+        //https://github.com/google/cameraview/issues/184
+        if (DeviceName.getDeviceName().contains("Xperia")) {
+            cameraView.setForceCamera1(true);
+        }
 
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override

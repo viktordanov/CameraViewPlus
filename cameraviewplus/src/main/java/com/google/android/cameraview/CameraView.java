@@ -76,6 +76,8 @@ public class CameraView extends FrameLayout {
 
     private final DisplayOrientationDetector mDisplayOrientationDetector;
 
+    private boolean isForceCamera1 = false;
+
     public CameraView(Context context) {
         this(context, null);
     }
@@ -93,7 +95,7 @@ public class CameraView extends FrameLayout {
         }
         // Internal setup
         final PreviewImpl preview = createPreviewImpl(context);
-        if (Build.VERSION.SDK_INT < 21) {
+        if (Build.VERSION.SDK_INT < 21 || isForceCamera1) {
             mImpl = new Camera1(preview);
         } else if (Build.VERSION.SDK_INT < 23) {
             mImpl = new Camera2(preview, context);
@@ -390,6 +392,16 @@ public class CameraView extends FrameLayout {
      */
     public void setFlash(@Flash int flash) {
         mImpl.setFlash(flash);
+    }
+
+    /**
+     * This function exists because of this issue:
+     * https://github.com/google/cameraview/issues/184
+     *
+     * @param isForceCamera1 True if you want to force using Camera1.
+     */
+    public void setForceCamera1 (boolean isForceCamera1) {
+        this.isForceCamera1 = isForceCamera1;
     }
 
     /**
