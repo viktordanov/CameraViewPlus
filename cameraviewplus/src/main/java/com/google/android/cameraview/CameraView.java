@@ -431,6 +431,12 @@ public class CameraView extends FrameLayout {
         mImpl.takePicture();
     }
 
+    public void setPixelsPerOneZoomLevel (int pixels) {
+        if (mImpl != null) {
+            mImpl.setPixelsPerOneZoomLevel(pixels);
+        }
+    }
+
     protected static class SavedState extends BaseSavedState {
 
         @Facing
