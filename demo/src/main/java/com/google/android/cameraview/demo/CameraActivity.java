@@ -68,12 +68,6 @@ public class CameraActivity extends AppCompatActivity {
         captureButton = findViewById(R.id.shutter);
         turnButton = findViewById(R.id.turn);
 
-        //https://github.com/google/cameraview/issues/184
-        if (Configure.deviceName != null && Configure.deviceName.contains("Xperia") &&
-                (Configure.deviceName.contains("XZ")) || Configure.deviceName.contains("Compact")) {
-            cameraView.setForceCamera1(true);
-        }
-
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
