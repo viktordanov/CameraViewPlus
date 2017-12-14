@@ -21,6 +21,8 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
+import com.jaredrummler.android.device.DeviceName;
+
 
 /**
  * This demo app saves the taken picture to a constant file.
@@ -40,6 +42,15 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        if (Configure.deviceName == null) {
+            DeviceName.with(this).request(new DeviceName.Callback() {
+                @Override
+                public void onFinished(DeviceName.DeviceInfo info, Exception error) {
+                    Configure.deviceName = info.getName();
+                }
+            });
+        }
 
     }
 

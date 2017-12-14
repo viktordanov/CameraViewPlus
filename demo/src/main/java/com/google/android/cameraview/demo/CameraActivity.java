@@ -33,7 +33,6 @@ import android.widget.Toast;
 
 import com.google.android.cameraview.CameraView;
 import com.google.android.cameraview.CameraViewImpl;
-import com.jaredrummler.android.device.DeviceName;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -70,7 +69,8 @@ public class CameraActivity extends AppCompatActivity {
         turnButton = findViewById(R.id.turn);
 
         //https://github.com/google/cameraview/issues/184
-        if (DeviceName.getDeviceName().contains("Xperia")) {
+        if (Configure.deviceName != null && Configure.deviceName.contains("Xperia") &&
+                (Configure.deviceName.contains("XZ")) || Configure.deviceName.contains("Compact")) {
             cameraView.setForceCamera1(true);
         }
 

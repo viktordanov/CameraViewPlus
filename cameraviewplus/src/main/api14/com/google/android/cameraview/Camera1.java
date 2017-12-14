@@ -579,13 +579,20 @@ class Camera1 extends CameraViewImpl {
             }
 
             boolean needZoom = false;
+            int deltaZoom = (maxZoom / 30) + 1;
             if (realTimeDistance - mZoomDistance >= pixelsPerOneZoomLevel) {
                 //zoom in
-                if (zoom < maxZoom) zoom++;
+                if (zoom < maxZoom) {
+                    if (zoom + deltaZoom > maxZoom) deltaZoom = maxZoom - zoom;
+                    zoom = zoom + deltaZoom;
+                }
                 needZoom = true;
             } else if (mZoomDistance - realTimeDistance >= pixelsPerOneZoomLevel) {
                 //zoom out
-                if (zoom > 0) zoom--;
+                if (zoom > 0) {
+                    if (zoom - deltaZoom < 1) deltaZoom = zoom - 1;
+                    zoom = zoom - deltaZoom;
+                }
                 needZoom = true;
             } else {
                 //Do nothing since the difference is not large enough
