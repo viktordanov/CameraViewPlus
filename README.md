@@ -2,7 +2,7 @@
 The aim of this library is to let you integrate camera features to your app, in case using `Intent` to launch default Camera cannot fulfill your requirements.
 
 This is a fork from Google's [CameraView](https://github.com/google/cameraview).  
-Based on the original one, the following has been done (As per 2017-12-14):
+Based on the original one, the following has been done (As per Version 0.7.0):
 
 - Resolved some bugs
 - Implemented zoom feature
@@ -15,7 +15,7 @@ Based on the original one, the following has been done (As per 2017-12-14):
 ## When do I need this library?
 Surprising, I found that there are not much CameraView library out there.  
 I think it is because in most use-cases, we just need to launch the default camera by `Intent` and get the returned `Bitmap`.  
-As far as I know, unless **you want to customize the look and feel of the "Camera Activity"** (e.g. overlaying a photoframe on the preview), it is rare that you need to implement your own CameraView.
+As far as I know, unless **you want to customize the layout of the "Camera Activity"** (e.g. overlaying a photoframe on the preview), it is rare that you need to implement your own CameraView.
 
 ## Why this library?
 In fact, there is a pretty good library ([CameraView](https://github.com/natario1/CameraView)) out there. It has quite a number of features including video recording, together with well-written documentation.
@@ -76,6 +76,8 @@ TODO: Gradle
 
 `cameraAspectRatio` is width/height in LANDSCAPE mode. (Thus width is the LONGER side)  
 
+**IMPORTANT: Please use your own ViewGroup to contain CameraView. Otherwise the preview might over-expand to out of what you may expect. I did not spend time on trying to fix this.**
+
 ### Step 3: Starting CameraView in your activity
 
 This library does not help you to check runtime permission!  
@@ -107,7 +109,7 @@ Warm reminder: `onReumse()` will be triggered after user has granted or denied a
 
 ### Step 4: Setting up callbacks
 
-**IMPORTANT: Add these callbacks after cameraView.start(). Else no effect will take place if the device has API level >= 21 but using LEGACY camera.**
+**IMPORTANT: Add these callbacks after cameraView.start(). Otherwise no effect will take place if the device has API level >= 21 but using LEGACY camera.**
 
 I have anchored 4 places where CameraView will callback your activity to let you do something. They are:
 
@@ -177,9 +179,9 @@ cameraView.setPixelsPerOneZoomLevel(100) //Default value is 80
 ```
 
 The number of pixels represents the distance (in pixels) between your fingers that need to change, in order for zoom level to increase or decrease by 1x.  
-(With that said, Camera1 API does not expose such precise zoom ratio. So, if the device uses Camera1 API, the the zoom level difference is discrete and hard to tell the ratio.)
+(With that said, Camera1 API does not expose such precise zoom ratio. So, if the device uses Camera1 API, the zoom level difference is discrete and hard to tell the exact ratio change.)
 
-### Force Camera 1
+### Forcing to use Camera1
 
 This feature is solely (at least solely for now) for solving [this issue](https://github.com/google/cameraview/issues/184).  
 **Before the construction of CameraView**, (i.e. before `onCreate()` of an `Activity`):  
@@ -227,7 +229,8 @@ Therefore, you will find that the Bitmap produces by this library (taken in port
 As far as I know, this happens if your device has API Level >= 21, but still using Camera1 API.  
 This happens if  
 1. Your device has a [LEGACY](https://source.android.com/devices/camera/versioning#glossary) camera, or;
-2. You have force to use Camera1 on this device.  
+2. You have forced to use Camera1 on this device.  
+
 And, again, as far as I know, you can do nothing about it.  
 
 Please let me know if you know there is a way to turn it off!
