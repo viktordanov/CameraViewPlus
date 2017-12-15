@@ -50,7 +50,12 @@ CameraViewPlus does not provide as much functionalities and flexibilities as thi
 ## Usage
 
 ### Step 1: Add to your project
-TODO: Gradle
+
+Add to application's build.gradle:
+
+```
+    implementation 'com.asksira.android:cameraviewplus:0.7.0'
+```
 
 ### Step 2: Add CameraView to your layout
 
