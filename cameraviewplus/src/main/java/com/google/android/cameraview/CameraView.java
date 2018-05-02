@@ -427,6 +427,12 @@ public class CameraView extends FrameLayout {
         }
     }
 
+    public void setOnFrameListener (CameraViewImpl.OnFrameListener onFrameListener) {
+        if (mImpl != null) {
+            mImpl.setOnFrameListener(onFrameListener);
+        }
+    }
+
     public void takePicture() {
         mImpl.takePicture();
     }

@@ -82,6 +82,7 @@ class Camera1 extends CameraViewImpl {
                 if (mCamera != null) {
                     setUpPreview();
                     adjustCameraParameters();
+                    setupPreviewCallback();
                 }
             }
         });
@@ -93,6 +94,7 @@ class Camera1 extends CameraViewImpl {
         openCamera();
         if (mPreview.isReady()) {
             setUpPreview();
+            setupPreviewCallback();
         }
         mShowingPreview = true;
         mCamera.startPreview();
@@ -124,6 +126,30 @@ class Camera1 extends CameraViewImpl {
             } else {
                 mCamera.setPreviewTexture((SurfaceTexture) mPreview.getSurfaceTexture());
             }
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
+        }
+    }
+
+    void setupPreviewCallback () {
+        try {
+            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                @Override
+                public void onPreviewFrame(byte[] data, Camera camera) {
+                    if (data == null) return;
+                    if (onFrameCallback != null) onFrameCallback.onFrame(data,
+                            camera.getParameters().getPreviewSize().width,
+                            camera.getParameters().getPreviewSize().height);
+                }
+            });
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
             if (cameraErrorCallback != null) {
@@ -438,6 +464,7 @@ class Camera1 extends CameraViewImpl {
 
     private void releaseCamera() {
         if (mCamera != null) {
+            mCamera.setPreviewCallback(null);
             mCamera.release();
             mCamera = null;
         }

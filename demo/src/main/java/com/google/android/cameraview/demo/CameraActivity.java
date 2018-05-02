@@ -26,8 +26,10 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v8.renderscript.RenderScript;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -42,8 +44,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.Callable;
 
+import io.github.silvaren.easyrs.tools.Nv21Image;
 import io.reactivex.Observable;
+import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
@@ -57,6 +62,8 @@ public class CameraActivity extends AppCompatActivity {
     View shutterEffect;
     View captureButton;
     View turnButton;
+
+    private RenderScript rs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +88,8 @@ public class CameraActivity extends AppCompatActivity {
                 cameraView.switchCamera();
             }
         });
+
+        rs = RenderScript.create(this);
     }
 
     @Override
@@ -146,6 +155,42 @@ public class CameraActivity extends AppCompatActivity {
             @Override
             public void onCameraError(Exception e) {
                 Toast.makeText(CameraActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+        cameraView.setOnFrameListener(new CameraViewImpl.OnFrameListener() {
+            @Override
+            public void onFrame(final byte[] data, final int width, final int height) {
+                Observable.fromCallable(new Callable<Bitmap>() {
+                    @Override
+                    public Bitmap call() throws Exception {
+                        return Nv21Image.nv21ToBitmap(
+                                rs, data, width, height);
+                    }
+                }).subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Observer<Bitmap>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
+                            }
+
+                            @Override
+                            public void onNext(Bitmap frameBitmap) {
+                                if (frameBitmap != null) {
+                                    Log.i("onFrame", frameBitmap.getWidth() + ", " + frameBitmap.getHeight());
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
             }
         });
     }

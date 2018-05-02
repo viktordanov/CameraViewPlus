@@ -34,6 +34,7 @@ public abstract class CameraViewImpl {
     protected OnTurnCameraFailListener turnFailCallback;
     protected OnCameraErrorListener cameraErrorCallback;
     protected OnFocusLockedListener focusLockedCallback;
+    protected OnFrameListener onFrameCallback;
     protected CameraUtils.BitmapCallback bitmapDecodedCallback = new CameraUtils.BitmapCallback() {
         @Override
         public void onBitmapReady(Bitmap bitmap) {
@@ -75,6 +76,10 @@ public abstract class CameraViewImpl {
 
     public void setOnCameraErrorListener (OnCameraErrorListener onCameraErrorListener) {
         this.cameraErrorCallback = onCameraErrorListener;
+    }
+
+    public void setOnFrameListener (OnFrameListener onFrameListener) {
+        this.onFrameCallback = onFrameListener;
     }
 
     /**
@@ -147,6 +152,10 @@ public abstract class CameraViewImpl {
 
     public interface OnFocusLockedListener {
         void onFocusLocked ();
+    }
+
+    public interface OnFrameListener {
+        void onFrame (byte[] data, int width, int height);
     }
 
 }
