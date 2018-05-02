@@ -184,6 +184,9 @@ class Camera2 extends CameraViewImpl {
             }
         }
     };
+    private byte[] latestFrameData;
+    private int latestFrameWidth;
+    private int latestFrameHeight;
     private final ImageReader.OnImageAvailableListener mOnFrameAvailableListener
             = new ImageReader.OnImageAvailableListener() {
         @Override
@@ -193,9 +196,18 @@ class Camera2 extends CameraViewImpl {
                 @Override
                 public void run() {
                     final Image image = reader.acquireNextImage();
+                    if (image == null) return;
                     try {
                         if (onFrameCallback != null) {
-                            onFrameCallback.onFrame(CameraUtils.YUV420toNV21(image), image.getWidth(), image.getHeight());
+                            latestFrameData = CameraUtils.YUV420toNV21(image);
+                            latestFrameWidth = image.getWidth();
+                            latestFrameHeight = image.getHeight();
+                            mFrameProcessHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    onFrameCallback.onFrame(latestFrameData, latestFrameWidth, latestFrameHeight);
+                                }
+                            });
                         }
                     } finally {
                         image.close();
@@ -239,6 +251,9 @@ class Camera2 extends CameraViewImpl {
 
     private Handler mFrameHandler;
     private HandlerThread mFrameThread;
+
+    private Handler mFrameProcessHandler;
+    private HandlerThread mFrameProcessThread;
 
     Camera2(PreviewImpl preview, Context context) {
         super(preview);
@@ -507,9 +522,9 @@ class Camera2 extends CameraViewImpl {
         }
         Size largest = mPictureSizes.sizes(mAspectRatio).last();
         mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                ImageFormat.JPEG, /* maxImages */ 2);
+                ImageFormat.JPEG, /* maxImages */ 1);
         mFrameImageReader = ImageReader.newInstance(largest.getWidth() / 4, largest.getHeight() / 4,
-                ImageFormat.YUV_420_888, 2);
+                ImageFormat.YUV_420_888, 1);
         mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
         mFrameImageReader.setOnImageAvailableListener(mOnFrameAvailableListener, mBackgroundHandler);
     }
@@ -795,11 +810,15 @@ class Camera2 extends CameraViewImpl {
         mFrameThread = new HandlerThread("CameraFrameBackground");
         mFrameThread.start();
         mFrameHandler = new Handler(mFrameThread.getLooper());
+        mFrameProcessThread = new HandlerThread("CameraFrameProcessBackground");
+        mFrameProcessThread.start();
+        mFrameProcessHandler = new Handler(mFrameProcessThread.getLooper());
     }
 
     private void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
-        mFrameThread.quitSafely();
+        mFrameThread.quit();
+        mFrameProcessThread.quit();
         try {
             mBackgroundThread.join();
             mBackgroundThread = null;
@@ -807,6 +826,9 @@ class Camera2 extends CameraViewImpl {
             mFrameThread.join();
             mFrameThread = null;
             mFrameHandler = null;
+            mFrameProcessThread.join();
+            mFrameProcessThread = null;
+            mFrameProcessHandler = null;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
