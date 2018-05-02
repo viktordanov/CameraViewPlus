@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.google.android.cameraview.CameraViewConfig;
 import com.jaredrummler.android.device.DeviceName;
 
 
@@ -52,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
                     //https://github.com/google/cameraview/issues/184
                     if (Configure.deviceName != null && Configure.deviceName.contains("Xperia") &&
                             (Configure.deviceName.contains("XZ")) || Configure.deviceName.contains("Compact")) {
-                        CameraViewConfig.isForceCamera1 = true;
+//                        CameraViewConfig.isForceCamera1 = true;
                     }
                 }
             });

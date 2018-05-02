@@ -26,9 +26,9 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v8.renderscript.RenderScript;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v8.renderscript.RenderScript;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -64,6 +64,8 @@ public class CameraActivity extends AppCompatActivity {
     View turnButton;
 
     private RenderScript rs;
+
+    private boolean frameIsProcessing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,11 +162,12 @@ public class CameraActivity extends AppCompatActivity {
         cameraView.setOnFrameListener(new CameraViewImpl.OnFrameListener() {
             @Override
             public void onFrame(final byte[] data, final int width, final int height) {
+                if (frameIsProcessing) return;
+                frameIsProcessing = true;
                 Observable.fromCallable(new Callable<Bitmap>() {
                     @Override
                     public Bitmap call() throws Exception {
-                        return Nv21Image.nv21ToBitmap(
-                                rs, data, width, height);
+                        return Nv21Image.nv21ToBitmap(rs, data, width, height);
                     }
                 }).subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
@@ -188,7 +191,7 @@ public class CameraActivity extends AppCompatActivity {
 
                             @Override
                             public void onComplete() {
-
+                                frameIsProcessing = false;
                             }
                         });
             }

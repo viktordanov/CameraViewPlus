@@ -31,6 +31,8 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.SparseIntArray;
@@ -106,7 +108,7 @@ class Camera2 extends CameraViewImpl {
             updateFlash();
             try {
                 mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
-                        mCaptureCallback, null);
+                        mCaptureCallback, mBackgroundHandler);
             } catch (final Exception e) {
                 if (BuildConfig.DEBUG) e.printStackTrace();
                 if (cameraErrorCallback != null) {
@@ -142,7 +144,7 @@ class Camera2 extends CameraViewImpl {
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
             setState(STATE_PRECAPTURE);
             try {
-                mCaptureSession.capture(mPreviewRequestBuilder.build(), this, null);
+                mCaptureSession.capture(mPreviewRequestBuilder.build(), this, mBackgroundHandler);
                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                         CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE);
             } catch (final Exception e) {
@@ -174,13 +176,33 @@ class Camera2 extends CameraViewImpl {
                 Image.Plane[] planes = image.getPlanes();
                 if (planes.length > 0) {
                     ByteBuffer buffer = planes[0].getBuffer();
-                    byte[] data = new byte[buffer.remaining()];
+                    byte[] data = new byte[buffer.capacity()];
                     buffer.get(data);
                     byteArrayToBitmap(data);
                 }
+                image.close();
             }
         }
-
+    };
+    private final ImageReader.OnImageAvailableListener mOnFrameAvailableListener
+            = new ImageReader.OnImageAvailableListener() {
+        @Override
+        public void onImageAvailable(final ImageReader reader) {
+            if (mFrameHandler == null) return;
+            mFrameHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    final Image image = reader.acquireNextImage();
+                    try {
+                        if (onFrameCallback != null) {
+                            onFrameCallback.onFrame(CameraUtils.YUV420toNV21(image), image.getWidth(), image.getHeight());
+                        }
+                    } finally {
+                        image.close();
+                    }
+                }
+            });
+        }
     };
 
 
@@ -195,6 +217,7 @@ class Camera2 extends CameraViewImpl {
     CaptureRequest.Builder mPreviewRequestBuilder;
 
     private ImageReader mImageReader;
+    private ImageReader mFrameImageReader;
 
     private final SizeMap mPreviewSizes = new SizeMap();
 
@@ -210,6 +233,12 @@ class Camera2 extends CameraViewImpl {
     private int mFlash;
 
     private int mDisplayOrientation;
+
+    private Handler mBackgroundHandler;
+    private HandlerThread mBackgroundThread;
+
+    private Handler mFrameHandler;
+    private HandlerThread mFrameThread;
 
     Camera2(PreviewImpl preview, Context context) {
         super(preview);
@@ -230,6 +259,7 @@ class Camera2 extends CameraViewImpl {
         collectCameraInfo();
         prepareImageReader();
         startOpeningCamera();
+        startBackgroundThread();
         return true;
     }
 
@@ -247,6 +277,11 @@ class Camera2 extends CameraViewImpl {
             mImageReader.close();
             mImageReader = null;
         }
+        if (mFrameImageReader != null) {
+            mFrameImageReader.close();
+            mFrameImageReader = null;
+        }
+        stopBackgroundThread();
         resetZoom();
     }
 
@@ -311,7 +346,7 @@ class Camera2 extends CameraViewImpl {
             if (mCaptureSession != null) {
                 try {
                     mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
-                            mCaptureCallback, null);
+                            mCaptureCallback, mBackgroundHandler);
                 } catch (CameraAccessException e) {
                     mAutoFocus = !mAutoFocus; // Revert
                 }
@@ -336,7 +371,7 @@ class Camera2 extends CameraViewImpl {
             if (mCaptureSession != null) {
                 try {
                     mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
-                            mCaptureCallback, null);
+                            mCaptureCallback, mBackgroundHandler);
                 } catch (CameraAccessException e) {
                     mFlash = saved; // Revert
                 }
@@ -416,7 +451,8 @@ class Camera2 extends CameraViewImpl {
             }
             // The operation can reach here when the only camera device is an external one.
             // We treat it as facing back.
-            if (turnFailCallback != null) turnFailCallback.onTurnCameraFail(new RuntimeException("Cannot find suitable Camera"));
+            if (turnFailCallback != null)
+                turnFailCallback.onTurnCameraFail(new RuntimeException("Cannot find suitable Camera"));
             mFacing = Constants.FACING_BACK;
             return true;
         } catch (CameraAccessException e) {
@@ -466,10 +502,16 @@ class Camera2 extends CameraViewImpl {
         if (mImageReader != null) {
             mImageReader.close();
         }
+        if (mFrameImageReader != null) {
+            mFrameImageReader.close();
+        }
         Size largest = mPictureSizes.sizes(mAspectRatio).last();
         mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                 ImageFormat.JPEG, /* maxImages */ 2);
-        mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, null);
+        mFrameImageReader = ImageReader.newInstance(largest.getWidth() / 4, largest.getHeight() / 4,
+                ImageFormat.YUV_420_888, 2);
+        mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
+        mFrameImageReader.setOnImageAvailableListener(mOnFrameAvailableListener, mBackgroundHandler);
     }
 
     /**
@@ -478,7 +520,7 @@ class Camera2 extends CameraViewImpl {
      */
     private void startOpeningCamera() {
         try {
-            mCameraManager.openCamera(mCameraId, mCameraDeviceCallback, null);
+            mCameraManager.openCamera(mCameraId, mCameraDeviceCallback, mBackgroundHandler);
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
             if (cameraErrorCallback != null) {
@@ -498,17 +540,19 @@ class Camera2 extends CameraViewImpl {
      * <p>The result will be continuously processed in {@link #mSessionCallback}.</p>
      */
     void startCaptureSession() {
-        if (!isCameraOpened() || !mPreview.isReady() || mImageReader == null) {
+        if (!isCameraOpened() || !mPreview.isReady() || mImageReader == null || mFrameImageReader == null) {
             return;
         }
         Size previewSize = chooseOptimalSize();
         mPreview.setBufferSize(previewSize.getWidth(), previewSize.getHeight());
         Surface surface = mPreview.getSurface();
+        Surface frameSurface = mFrameImageReader.getSurface();
         try {
             mPreviewRequestBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
-            mCamera.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
-                    mSessionCallback, null);
+            mPreviewRequestBuilder.addTarget(frameSurface);
+            mCamera.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface(), mFrameImageReader.getSurface()),
+                    mSessionCallback, mBackgroundHandler);
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
             if (cameraErrorCallback != null) {
@@ -619,7 +663,7 @@ class Camera2 extends CameraViewImpl {
                 CaptureRequest.CONTROL_AF_TRIGGER_START);
         try {
             mCaptureCallback.setState(PictureCaptureCallback.STATE_LOCKING);
-            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, mBackgroundHandler);
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
             if (cameraErrorCallback != null) {
@@ -697,11 +741,11 @@ class Camera2 extends CameraViewImpl {
                     new CameraCaptureSession.CaptureCallback() {
                         @Override
                         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                @NonNull CaptureRequest request,
-                                @NonNull TotalCaptureResult result) {
+                                                       @NonNull CaptureRequest request,
+                                                       @NonNull TotalCaptureResult result) {
                             unlockFocus();
                         }
-                    }, null);
+                    }, mBackgroundHandler);
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
             if (cameraErrorCallback != null) {
@@ -723,13 +767,13 @@ class Camera2 extends CameraViewImpl {
         mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                 CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
         try {
-            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+            mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, mBackgroundHandler);
             updateAutoFocus();
             updateFlash();
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CaptureRequest.CONTROL_AF_TRIGGER_IDLE);
             mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback,
-                    null);
+                    mBackgroundHandler);
             mCaptureCallback.setState(PictureCaptureCallback.STATE_PREVIEW);
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
@@ -741,6 +785,30 @@ class Camera2 extends CameraViewImpl {
                     }
                 });
             }
+        }
+    }
+
+    private void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("CameraBackground");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+        mFrameThread = new HandlerThread("CameraFrameBackground");
+        mFrameThread.start();
+        mFrameHandler = new Handler(mFrameThread.getLooper());
+    }
+
+    private void stopBackgroundThread() {
+        mBackgroundThread.quitSafely();
+        mFrameThread.quitSafely();
+        try {
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+            mFrameThread.join();
+            mFrameThread = null;
+            mFrameHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -795,12 +863,12 @@ class Camera2 extends CameraViewImpl {
 
             //Finally we can zoom
             float ratio = (float) 1 / zoomLevel;
-            int croppedWidth = rect.width() - Math.round((float)rect.width() * ratio);
-            int croppedHeight = rect.height() - Math.round((float)rect.height() * ratio);
-            zoom = new Rect(croppedWidth/2, croppedHeight/2,
-                    rect.width() - croppedWidth/2, rect.height() - croppedHeight/2);
+            int croppedWidth = rect.width() - Math.round((float) rect.width() * ratio);
+            int croppedHeight = rect.height() - Math.round((float) rect.height() * ratio);
+            zoom = new Rect(croppedWidth / 2, croppedHeight / 2,
+                    rect.width() - croppedWidth / 2, rect.height() - croppedHeight / 2);
             mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom);
-            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+            mCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, mBackgroundHandler);
 
             mZoomDistance = realTimeDistance;
             return true;
@@ -823,7 +891,7 @@ class Camera2 extends CameraViewImpl {
         mZoomDistance = null;
     }
 
-    void resetZoom () {
+    void resetZoom() {
         zoomLevel = 1f;
         zoom = null;
         mZoomDistance = 0f;
@@ -853,13 +921,13 @@ class Camera2 extends CameraViewImpl {
 
         @Override
         public void onCaptureProgressed(@NonNull CameraCaptureSession session,
-                @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
+                                        @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
             process(partialResult);
         }
 
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                       @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
             process(result);
         }
 
