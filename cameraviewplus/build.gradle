@@ -18,7 +18,7 @@ android {
     compileSdkVersion 27
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 27
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
@@ -40,7 +40,6 @@ android {
 dependencies {
     implementation "com.android.support:support-annotations:27.1.1"
     implementation "com.android.support:support-v4:27.1.1"
-    implementation "com.android.support:exifinterface:27.1.1"
 
     // Tests
     testCompile 'junit:junit:4.12'
@@ -65,7 +64,7 @@ ext {
     siteUrl = 'https://github.com/siralam/CameraViewPlus'
     gitUrl = 'https://github.com/siralam/CameraViewPlus.git'
 
-    libraryVersion = '0.7.0'
+    libraryVersion = '0.9.0'
 
     developerId = 'siralam'
     developerName = 'Sira Lam'

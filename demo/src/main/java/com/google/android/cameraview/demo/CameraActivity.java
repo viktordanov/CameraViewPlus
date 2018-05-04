@@ -23,6 +23,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -50,6 +51,7 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 public class CameraActivity extends AppCompatActivity {
@@ -133,11 +135,11 @@ public class CameraActivity extends AppCompatActivity {
         super.onPause();
     }
 
-    private void setupCameraCallbacks () {
+    private void setupCameraCallbacks() {
         cameraView.setOnPictureTakenListener(new CameraViewImpl.OnPictureTakenListener() {
             @Override
-            public void onPictureTaken(Bitmap bitmap) {
-                startSavingPhoto(bitmap);
+            public void onPictureTaken(Bitmap bitmap, int rotationDegrees) {
+                startSavingPhoto(bitmap, rotationDegrees);
             }
         });
         cameraView.setOnFocusLockedListener(new CameraViewImpl.OnFocusLockedListener() {
@@ -161,7 +163,7 @@ public class CameraActivity extends AppCompatActivity {
         });
         cameraView.setOnFrameListener(new CameraViewImpl.OnFrameListener() {
             @Override
-            public void onFrame(final byte[] data, final int width, final int height) {
+            public void onFrame(final byte[] data, final int width, final int height, int rotationDegrees) {
                 if (frameIsProcessing) return;
                 frameIsProcessing = true;
                 Observable.fromCallable(new Callable<Bitmap>() {
@@ -198,7 +200,7 @@ public class CameraActivity extends AppCompatActivity {
         });
     }
 
-    private void playShutterAnimation () {
+    private void playShutterAnimation() {
         shutterEffect.setVisibility(View.VISIBLE);
         shutterEffect.animate().alpha(0f).setDuration(300).setListener(
                 new AnimatorListenerAdapter() {
@@ -246,10 +248,17 @@ public class CameraActivity extends AppCompatActivity {
         return file.getAbsolutePath();
     }
 
-    private void startSavingPhoto(final Bitmap bitmap) {
-        Observable.fromCallable(new Callable<String>() {
+    private void startSavingPhoto(final Bitmap bitmap, final int rotationDegrees) {
+        Observable.fromCallable(new Callable<Bitmap>() {
             @Override
-            public String call() throws Exception {
+            public Bitmap call() throws Exception {
+                Matrix matrix = new Matrix();
+                matrix.postRotate(-rotationDegrees);
+                return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            }
+        }).map(new Function<Bitmap, String>() {
+            @Override
+            public String apply(Bitmap bitmap) throws Exception {
                 return bitmapToFile(bitmap);
             }
         }).subscribeOn(Schedulers.io())

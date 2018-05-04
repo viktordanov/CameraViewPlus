@@ -21,14 +21,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.google.android.cameraview.CameraViewConfig;
-import com.jaredrummler.android.device.DeviceName;
-
-
-/**
- * This demo app saves the taken picture to a constant file.
- * $ adb pull /sdcard/Android/data/com.google.android.cameraview.demo/files/Pictures/picture.jpg
- */
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -43,21 +35,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-        if (Configure.deviceName == null) {
-            DeviceName.with(this).request(new DeviceName.Callback() {
-                @Override
-                public void onFinished(DeviceName.DeviceInfo info, Exception error) {
-                    Configure.deviceName = info.getName();
-                    //https://github.com/google/cameraview/issues/184
-                    if (Configure.deviceName != null && Configure.deviceName.contains("Xperia") &&
-                            (Configure.deviceName.contains("XZ")) || Configure.deviceName.contains("Compact")) {
-                        CameraViewConfig.isForceCamera1 = true;
-                    }
-                }
-            });
-        }
-
     }
 
 }
