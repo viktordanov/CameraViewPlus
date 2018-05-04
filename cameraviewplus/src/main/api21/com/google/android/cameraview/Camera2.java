@@ -20,6 +20,8 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -199,13 +201,16 @@ class Camera2 extends CameraViewImpl {
                     if (image == null) return;
                     try {
                         if (onFrameCallback != null) {
-                            latestFrameData = CameraUtils.YUV420toNV21(image);
+                            latestFrameData = Utils.YUV420toNV21(image);
                             latestFrameWidth = image.getWidth();
                             latestFrameHeight = image.getHeight();
                             mFrameProcessHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    onFrameCallback.onFrame(latestFrameData, latestFrameWidth, latestFrameHeight);
+                                    onFrameCallback.onFrame(latestFrameData,
+                                            latestFrameWidth,
+                                            latestFrameHeight,
+                                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
                                 }
                             });
                         }
@@ -256,7 +261,7 @@ class Camera2 extends CameraViewImpl {
     private HandlerThread mFrameProcessThread;
 
     Camera2(PreviewImpl preview, Context context) {
-        super(preview);
+        super(preview, context);
         mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         mPreview.setCallback(new PreviewImpl.Callback() {
             @Override
@@ -268,6 +273,10 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     boolean start() {
+        sensorManager.registerListener(
+                this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(
+                this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
         if (!chooseCameraIdByFacing()) {
             return false;
         }
@@ -280,6 +289,9 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     void stop() {
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
         if (mCaptureSession != null) {
             mCaptureSession.close();
             mCaptureSession = null;
@@ -412,6 +424,17 @@ class Camera2 extends CameraViewImpl {
     void setDisplayOrientation(int displayOrientation) {
         mDisplayOrientation = displayOrientation;
         mPreview.setDisplayOrientation(mDisplayOrientation);
+    }
+
+    @Override
+    int getCameraDefaultOrientation() {
+        try {
+            return getFacing() == CameraView.FACING_FRONT ?
+                    mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) - 180 :
+                    mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     /**
@@ -816,16 +839,24 @@ class Camera2 extends CameraViewImpl {
     }
 
     private void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
-        mFrameThread.quit();
-        mFrameProcessThread.quit();
         try {
+            mBackgroundThread.quitSafely();
             mBackgroundThread.join();
             mBackgroundThread = null;
             mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
+            mFrameThread.quit();
             mFrameThread.join();
             mFrameThread = null;
             mFrameHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
+            mFrameProcessThread.quit();
             mFrameProcessThread.join();
             mFrameProcessThread = null;
             mFrameProcessHandler = null;

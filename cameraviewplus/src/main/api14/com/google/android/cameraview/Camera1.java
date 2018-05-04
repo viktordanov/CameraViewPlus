@@ -17,9 +17,13 @@
 package com.google.android.cameraview;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.os.Build;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.v4.util.SparseArrayCompat;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -71,11 +75,14 @@ class Camera1 extends CameraViewImpl {
 
     private int mDisplayOrientation;
 
+    private Handler mFrameHandler;
+    private HandlerThread mFrameThread;
+
     //Zoom
     protected Float mZoomDistance;
 
-    Camera1(PreviewImpl preview) {
-        super(preview);
+    Camera1(PreviewImpl preview, Context context) {
+        super(preview, context);
         preview.setCallback(new PreviewImpl.Callback() {
             @Override
             public void onSurfaceChanged() {
@@ -90,6 +97,10 @@ class Camera1 extends CameraViewImpl {
 
     @Override
     boolean start() {
+        sensorManager.registerListener(
+                this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(
+                this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
         chooseCamera();
         openCamera();
         if (mPreview.isReady()) {
@@ -97,12 +108,17 @@ class Camera1 extends CameraViewImpl {
             setupPreviewCallback();
         }
         mShowingPreview = true;
+        startBackgroundThread();
         mCamera.startPreview();
         return true;
     }
 
     @Override
     void stop() {
+        sensorManager.unregisterListener(this);
+        latestFrameWidth = 0;
+        latestFrameHeight = 0;
+        stopBackgroundThread();
         if (mCamera != null) {
             mCamera.stopPreview();
         }
@@ -115,14 +131,7 @@ class Camera1 extends CameraViewImpl {
     void setUpPreview() {
         try {
             if (mPreview.getOutputClass() == SurfaceHolder.class) {
-                final boolean needsToStopPreview = mShowingPreview && Build.VERSION.SDK_INT < 14;
-                if (needsToStopPreview) {
-                    mCamera.stopPreview();
-                }
                 mCamera.setPreviewDisplay(mPreview.getSurfaceHolder());
-                if (needsToStopPreview) {
-                    mCamera.startPreview();
-                }
             } else {
                 mCamera.setPreviewTexture((SurfaceTexture) mPreview.getSurfaceTexture());
             }
@@ -139,15 +148,29 @@ class Camera1 extends CameraViewImpl {
         }
     }
 
+    private byte[] latestFrameData;
+    private int latestFrameWidth;
+    private int latestFrameHeight;
     void setupPreviewCallback () {
         try {
             mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                 @Override
-                public void onPreviewFrame(byte[] data, Camera camera) {
-                    if (data == null) return;
-                    if (onFrameCallback != null) onFrameCallback.onFrame(data,
-                            camera.getParameters().getPreviewSize().width,
-                            camera.getParameters().getPreviewSize().height);
+                public void onPreviewFrame(final byte[] data, final Camera camera) {
+                    if (data == null || isPictureCaptureInProgress.get() || mFrameHandler == null) return;
+                    if (onFrameCallback != null)  {
+                        latestFrameData = data;
+                        if (latestFrameWidth == 0) latestFrameWidth = camera.getParameters().getPreviewSize().width;
+                        if (latestFrameHeight == 0)latestFrameHeight = camera.getParameters().getPreviewSize().height;
+                        mFrameHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                onFrameCallback.onFrame(latestFrameData,
+                                        latestFrameWidth,
+                                        latestFrameHeight,
+                                        -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                            }
+                        });
+                    }
                 }
             });
         } catch (final Exception e) {
@@ -274,6 +297,7 @@ class Camera1 extends CameraViewImpl {
     }
 
     void takePictureInternal() {
+        stopBackgroundThread();
         try {
             if (!isPictureCaptureInProgress.getAndSet(true)) {
                 mCamera.takePicture(new Camera.ShutterCallback() {
@@ -288,8 +312,34 @@ class Camera1 extends CameraViewImpl {
                         byteArrayToBitmap(data);
                         camera.cancelAutoFocus();
                         camera.startPreview();
+                        startBackgroundThread();
                     }
                 });
+            }
+        } catch (final Exception e) {
+            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (cameraErrorCallback != null) {
+                mPreview.getView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraErrorCallback.onCameraError(e);
+                    }
+                });
+            }
+            startBackgroundThread();
+        }
+    }
+
+    @Override
+    void setDisplayOrientation(int displayOrientation) {
+        try {
+            if (mDisplayOrientation == displayOrientation) {
+                return;
+            }
+            mDisplayOrientation = displayOrientation;
+            if (isCameraOpened()) {
+                mCameraParameters.setRotation(displayOrientation);
+                mCamera.setParameters(mCameraParameters);
             }
         } catch (final Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
@@ -305,34 +355,11 @@ class Camera1 extends CameraViewImpl {
     }
 
     @Override
-    void setDisplayOrientation(int displayOrientation) {
-        try {
-            if (mDisplayOrientation == displayOrientation) {
-                return;
-            }
-            mDisplayOrientation = displayOrientation;
-            if (isCameraOpened()) {
-                mCameraParameters.setRotation(calcCameraRotation(displayOrientation));
-                mCamera.setParameters(mCameraParameters);
-                final boolean needsToStopPreview = mShowingPreview && Build.VERSION.SDK_INT < 14;
-                if (needsToStopPreview) {
-                    mCamera.stopPreview();
-                }
-                mCamera.setDisplayOrientation(calcDisplayOrientation(displayOrientation));
-                if (needsToStopPreview) {
-                    mCamera.startPreview();
-                }
-            }
-        } catch (final Exception e) {
-            if (BuildConfig.DEBUG) e.printStackTrace();
-            if (cameraErrorCallback != null) {
-                mPreview.getView().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        cameraErrorCallback.onCameraError(e);
-                    }
-                });
-            }
+    int getCameraDefaultOrientation() {
+        if (mCameraInfo != null) {
+            return getFacing() == CameraView.FACING_FRONT ? mCameraInfo.orientation - 180 : mCameraInfo.orientation;
+        } else {
+            return 0;
         }
     }
 
@@ -415,7 +442,7 @@ class Camera1 extends CameraViewImpl {
             }
             mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
             mCameraParameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
-            mCameraParameters.setRotation(calcCameraRotation(mDisplayOrientation));
+            mCameraParameters.setRotation(mDisplayOrientation);
             setAutoFocusInternal(mAutoFocus);
             setFlashInternal(mFlash);
             mCamera.setParameters(mCameraParameters);
@@ -590,6 +617,23 @@ class Camera1 extends CameraViewImpl {
                 });
             }
             return false;
+        }
+    }
+
+    private void startBackgroundThread() {
+        mFrameThread = new HandlerThread("CameraFrameBackground");
+        mFrameThread.start();
+        mFrameHandler = new Handler(mFrameThread.getLooper());
+    }
+
+    private void stopBackgroundThread() {
+        try {
+            mFrameThread.quit();
+            mFrameThread.join();
+            mFrameThread = null;
+            mFrameHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

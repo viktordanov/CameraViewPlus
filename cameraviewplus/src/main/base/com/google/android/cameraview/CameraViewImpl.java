@@ -16,14 +16,21 @@
 
 package com.google.android.cameraview;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.Set;
 
-public abstract class CameraViewImpl {
+public abstract class CameraViewImpl implements SensorEventListener {
 
     /**
      * The distance between 2 fingers (in pixel) needed in order for zoom level to increase by 1x.
@@ -35,21 +42,28 @@ public abstract class CameraViewImpl {
     protected OnCameraErrorListener cameraErrorCallback;
     protected OnFocusLockedListener focusLockedCallback;
     protected OnFrameListener onFrameCallback;
-    protected CameraUtils.BitmapCallback bitmapDecodedCallback = new CameraUtils.BitmapCallback() {
-        @Override
-        public void onBitmapReady(Bitmap bitmap) {
-            if (getFacing() == CameraView.FACING_FRONT) {
-                if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap));
-            } else {
-                if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap);
-            }
-        }
-    };
 
     protected final PreviewImpl mPreview;
 
-    CameraViewImpl(PreviewImpl preview) {
+    //Orientation Sensor
+    protected SensorManager sensorManager;
+    protected Sensor accelerometerSensor;
+    protected Sensor magnetometerSensor;
+    protected float[] accelerometerReading = new float[3];
+    protected float[] magnetometerReading = new float[3];
+    protected float[] rotationMatrix = new float[9];
+    protected float[] orientationAngles = new float[3];
+    protected OrientationCalculator orientationCalculator;
+
+
+    CameraViewImpl(PreviewImpl preview, Context context) {
         mPreview = preview;
+        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        }
+        orientationCalculator = new OrientationCalculator();
     }
 
     View getView() {
@@ -117,6 +131,13 @@ public abstract class CameraViewImpl {
     abstract void setDisplayOrientation(int displayOrientation);
 
     /**
+     * Different devices have different default orientations,
+     * Therefore we need to take into account this value before passing the rotation
+     * in the callback.
+     */
+    abstract int getCameraDefaultOrientation ();
+
+    /**
      * @return {@code true} if the motionEvent is consumed.
      */
     abstract boolean zoom (MotionEvent event);
@@ -129,8 +150,22 @@ public abstract class CameraViewImpl {
         return (float) Math.sqrt(x * x + y * y);
     }
 
-    protected void byteArrayToBitmap (byte[] data) {
-        CameraUtils.decodeBitmap(data, bitmapDecodedCallback);
+    protected void byteArrayToBitmap (final byte[] data) {
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inMutable = true;
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+                if (getFacing() == CameraView.FACING_FRONT) {
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap),
+                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                } else {
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap,
+                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                }
+            }
+        });
     }
 
     public void setPixelsPerOneZoomLevel (int pixels) {
@@ -138,8 +173,30 @@ public abstract class CameraViewImpl {
         pixelsPerOneZoomLevel = pixels;
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor == accelerometerSensor) {
+            System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.length);
+            updateOrientation();
+        } else if (event.sensor == magnetometerSensor) {
+            System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.length);
+            updateOrientation();
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    protected void updateOrientation () {
+        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
+        SensorManager.getOrientation(rotationMatrix, orientationAngles);
+        orientationCalculator.update(orientationAngles[1], orientationAngles[2]);
+    }
+
     public interface OnPictureTakenListener {
-        void onPictureTaken (Bitmap bitmap);
+        void onPictureTaken (Bitmap bitmap, int rotationDegrees);
     }
 
     public interface OnTurnCameraFailListener {
@@ -155,7 +212,7 @@ public abstract class CameraViewImpl {
     }
 
     public interface OnFrameListener {
-        void onFrame (byte[] data, int width, int height);
+        void onFrame (byte[] data, int width, int height, int rotationDegrees);
     }
 
 }

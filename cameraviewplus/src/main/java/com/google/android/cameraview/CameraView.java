@@ -94,7 +94,7 @@ public class CameraView extends FrameLayout {
         // Internal setup
         final PreviewImpl preview = createPreviewImpl(context);
         if (CameraViewConfig.isForceCamera1 || Build.VERSION.SDK_INT < 21) {
-            mImpl = new Camera1(preview);
+            mImpl = new Camera1(preview, context);
         } else if (Build.VERSION.SDK_INT < 23) {
             mImpl = new Camera2(preview, context);
         } else {
@@ -260,7 +260,7 @@ public class CameraView extends FrameLayout {
             //store the state ,and restore this state after fall back o Camera1
             Parcelable state=onSaveInstanceState();
             // Camera2 uses legacy hardware layer; fall back to Camera1
-            mImpl = new Camera1(createPreviewImpl(getContext()));
+            mImpl = new Camera1(createPreviewImpl(getContext()), getContext());
             onRestoreInstanceState(state);
             mImpl.start();
         }
@@ -440,6 +440,14 @@ public class CameraView extends FrameLayout {
     public void setPixelsPerOneZoomLevel (int pixels) {
         if (mImpl != null) {
             mImpl.setPixelsPerOneZoomLevel(pixels);
+        }
+    }
+
+    public int getDefaultOrientation () {
+        if (mImpl != null) {
+            return mImpl.getCameraDefaultOrientation();
+        } else {
+            return 0;
         }
     }
 
