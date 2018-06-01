@@ -429,10 +429,12 @@ class Camera2 extends CameraViewImpl {
     @Override
     int getCameraDefaultOrientation() {
         try {
-            return getFacing() == CameraView.FACING_FRONT ?
+            int orientationDegrees = getFacing() == CameraView.FACING_FRONT ?
                     mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) - 180 :
                     mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+            return orientationDegrees;
         } catch (Exception e) {
+            Log.w("Camera2", "Failed to get CameraDefaultOrientation");
             return 0;
         }
     }
@@ -754,14 +756,6 @@ class Camera2 extends CameraViewImpl {
                             CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
                     break;
             }
-            // Calculate JPEG orientation.
-            @SuppressWarnings("ConstantConditions")
-            int sensorOrientation = mCameraCharacteristics.get(
-                    CameraCharacteristics.SENSOR_ORIENTATION);
-            captureRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION,
-                    (sensorOrientation +
-                            mDisplayOrientation * (mFacing == Constants.FACING_FRONT ? 1 : -1) +
-                            360) % 360);
             // Stop preview and capture a still picture.
             mCaptureSession.stopRepeating();
 
@@ -840,24 +834,24 @@ class Camera2 extends CameraViewImpl {
 
     private void stopBackgroundThread() {
         try {
-            mBackgroundThread.quitSafely();
-            mBackgroundThread.join();
+            if (mBackgroundThread != null) mBackgroundThread.quitSafely();
+            if (mBackgroundThread != null) mBackgroundThread.join();
             mBackgroundThread = null;
             mBackgroundHandler = null;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         try {
-            mFrameThread.quit();
-            mFrameThread.join();
+            if (mFrameThread != null) mFrameThread.quit();
+            if (mFrameThread != null) mFrameThread.join();
             mFrameThread = null;
             mFrameHandler = null;
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         try {
-            mFrameProcessThread.quit();
-            mFrameProcessThread.join();
+            if (mFrameProcessThread != null) mFrameProcessThread.quit();
+            if (mFrameProcessThread != null) mFrameProcessThread.join();
             mFrameProcessThread = null;
             mFrameProcessHandler = null;
         } catch (InterruptedException e) {
