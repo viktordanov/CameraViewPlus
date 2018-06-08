@@ -628,8 +628,8 @@ class Camera1 extends CameraViewImpl {
 
     private void stopBackgroundThread() {
         try {
-            mFrameThread.quit();
-            mFrameThread.join();
+            if (mFrameThread != null) mFrameThread.quit();
+            if (mFrameThread != null) mFrameThread.join();
             mFrameThread = null;
             mFrameHandler = null;
         } catch (InterruptedException e) {

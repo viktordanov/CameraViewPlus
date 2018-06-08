@@ -2,7 +2,7 @@
 The aim of this library is to let you integrate camera features to your app, in case using `Intent` to launch default Camera cannot fulfill your requirements, such as overlaying images to your Camera preview.
 
 This is a fork from Google's [CameraView](https://github.com/google/cameraview).  
-Based on the original one, the following has been done (As per Version 0.9.1):
+Based on the original one, the following has been done (As per Version 0.9.2):
 
 - Resolved some bugs
 - Implemented zoom feature
@@ -70,7 +70,7 @@ So, in your AndroidManifest.xml:
 Add to application's build.gradle:
 
 ```
-    implementation 'com.asksira.android:cameraviewplus:0.9.1'
+    implementation 'com.asksira.android:cameraviewplus:0.9.2'
 ```
 
 ### Step 2: Add CameraView to your layout

@@ -92,7 +92,7 @@ public class CameraView extends FrameLayout {
             return;
         }
         // Internal setup
-        final PreviewImpl preview = createPreviewImpl(context);
+        final PreviewImpl preview = createPreviewImpl(context, false);
         if (CameraViewConfig.isForceCamera1 || Build.VERSION.SDK_INT < 21) {
             mImpl = new Camera1(preview, context);
         } else if (Build.VERSION.SDK_INT < 23) {
@@ -124,9 +124,9 @@ public class CameraView extends FrameLayout {
     }
 
     @NonNull
-    private PreviewImpl createPreviewImpl(Context context) {
+    private PreviewImpl createPreviewImpl(Context context, boolean isLegacy) {
         PreviewImpl preview;
-        if (Build.VERSION.SDK_INT < 14) {
+        if (Build.VERSION.SDK_INT < 21 || CameraViewConfig.isForceCamera1 || isLegacy) {
             preview = new SurfaceViewPreview(context, this);
         } else {
             preview = new TextureViewPreview(context, this);
@@ -258,9 +258,9 @@ public class CameraView extends FrameLayout {
     public void start() {
         if (!mImpl.start()) {
             //store the state ,and restore this state after fall back o Camera1
-            Parcelable state=onSaveInstanceState();
+            Parcelable state = onSaveInstanceState();
             // Camera2 uses legacy hardware layer; fall back to Camera1
-            mImpl = new Camera1(createPreviewImpl(getContext()), getContext());
+            mImpl = new Camera1(createPreviewImpl(getContext(), true), getContext());
             onRestoreInstanceState(state);
             mImpl.start();
         }
