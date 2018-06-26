@@ -534,7 +534,12 @@ class Camera2 extends CameraViewImpl {
 
     protected void collectPictureSizes(SizeMap sizes, StreamConfigurationMap map) {
         for (android.util.Size size : map.getOutputSizes(ImageFormat.JPEG)) {
-            mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
+            Log.i("CameraView2", "Picture Size: " + size.toString());
+            if (mMaximumWidth == 0) {
+                mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
+            } else if (size.getWidth() < mMaximumWidth && size.getHeight() < mMaximumWidth) {
+                mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
+            }
         }
     }
 

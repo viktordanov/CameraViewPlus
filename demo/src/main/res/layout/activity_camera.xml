@@ -32,7 +32,8 @@
         app:autoFocus="true"
         app:cameraAspectRatio="4:3"
         app:facing="back"
-        app:flash="off"/>
+        app:flash="off"
+        app:useHighResPicture="true"/>
 
     <View
         android:id="@+id/shutter_effect"

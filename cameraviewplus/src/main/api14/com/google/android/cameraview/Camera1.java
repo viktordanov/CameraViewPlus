@@ -25,6 +25,7 @@ import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v4.util.SparseArrayCompat;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
@@ -393,7 +394,12 @@ class Camera1 extends CameraViewImpl {
             // Supported picture sizes;
             mPictureSizes.clear();
             for (Camera.Size size : mCameraParameters.getSupportedPictureSizes()) {
-                mPictureSizes.add(new Size(size.width, size.height));
+                Log.i("CameraView2", "Picture Size: " + size.toString());
+                if (mMaximumWidth == 0) {
+                    mPictureSizes.add(new Size(size.width, size.height));
+                } else if (size.width < mMaximumWidth && size.height < mMaximumWidth) {
+                    mPictureSizes.add(new Size(size.width, size.height));
+                }
             }
             // AspectRatio
             if (mAspectRatio == null) {

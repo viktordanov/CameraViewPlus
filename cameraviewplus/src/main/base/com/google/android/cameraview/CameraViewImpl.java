@@ -45,6 +45,8 @@ public abstract class CameraViewImpl implements SensorEventListener {
 
     protected final PreviewImpl mPreview;
 
+    protected int mMaximumWidth = 0;
+
     //Orientation Sensor
     protected SensorManager sensorManager;
     protected Sensor accelerometerSensor;
@@ -171,6 +173,14 @@ public abstract class CameraViewImpl implements SensorEventListener {
     public void setPixelsPerOneZoomLevel (int pixels) {
         if (pixels <= 0) return;
         pixelsPerOneZoomLevel = pixels;
+    }
+
+    public int getMaximumWidth() {
+        return mMaximumWidth;
+    }
+
+    public void setMaximumWidth(int mMaximumWidth) {
+        this.mMaximumWidth = mMaximumWidth;
     }
 
     @Override

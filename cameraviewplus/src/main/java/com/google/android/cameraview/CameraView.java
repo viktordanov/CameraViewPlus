@@ -91,29 +91,39 @@ public class CameraView extends FrameLayout {
             mDisplayOrientationDetector = null;
             return;
         }
-        // Internal setup
-        final PreviewImpl preview = createPreviewImpl(context, false);
-        if (CameraViewConfig.isForceCamera1 || Build.VERSION.SDK_INT < 21) {
-            mImpl = new Camera1(preview, context);
-        } else if (Build.VERSION.SDK_INT < 23) {
-            mImpl = new Camera2(preview, context);
-        } else {
-            mImpl = new Camera2Api23(preview, context);
-        }
+
         // Attributes
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CameraView, defStyleAttr,
                 R.style.Widget_CameraView);
         mAdjustViewBounds = a.getBoolean(R.styleable.CameraView_android_adjustViewBounds, false);
-        setFacing(a.getInt(R.styleable.CameraView_facing, FACING_BACK));
         String aspectRatio = a.getString(R.styleable.CameraView_cameraAspectRatio);
+        int maximumWidth = a.getInt(R.styleable.CameraView_maximumWidth, 0);
+        boolean useHighResPicture = a.getBoolean(R.styleable.CameraView_useHighResPicture, maximumWidth == 0);
+        int facing = a.getInt(R.styleable.CameraView_facing, FACING_BACK);
+        boolean autoFocus = a.getBoolean(R.styleable.CameraView_autoFocus, true);
+        int flash = a.getInt(R.styleable.CameraView_flash, Constants.FLASH_AUTO);
+        a.recycle();
+
+        // Internal setup
+        final PreviewImpl preview = createPreviewImpl(context, false);
+        if (CameraViewConfig.isForceCamera1 || Build.VERSION.SDK_INT < 21) {
+            mImpl = new Camera1(preview, context);
+        } else if (Build.VERSION.SDK_INT >= 23 && useHighResPicture) {
+            mImpl = new Camera2Api23(preview, context);
+        } else {
+            mImpl = new Camera2(preview, context);
+        }
+        mImpl.setMaximumWidth(maximumWidth);
+
         if (aspectRatio != null) {
             setAspectRatio(AspectRatio.parse(aspectRatio));
         } else {
             setAspectRatio(Constants.DEFAULT_ASPECT_RATIO);
         }
-        setAutoFocus(a.getBoolean(R.styleable.CameraView_autoFocus, true));
-        setFlash(a.getInt(R.styleable.CameraView_flash, Constants.FLASH_AUTO));
-        a.recycle();
+        setFacing(facing);
+        setAutoFocus(autoFocus);
+        setFlash(flash);
+
         // Display orientation detector
         mDisplayOrientationDetector = new DisplayOrientationDetector(context) {
             @Override
@@ -121,6 +131,7 @@ public class CameraView extends FrameLayout {
                 mImpl.setDisplayOrientation(displayOrientation);
             }
         };
+
     }
 
     @NonNull
