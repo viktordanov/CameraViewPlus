@@ -2,7 +2,7 @@
 The aim of this library is to let you integrate camera features to your app, in case using `Intent` to launch default Camera cannot fulfill your requirements, such as overlaying images to your Camera preview.
 
 This is a fork from Google's [CameraView](https://github.com/google/cameraview).  
-Based on the original one, the following has been done (As per Version 0.9.3):
+Based on the original one, the following has been done (As per Version 0.9.4):
 
 - Resolved some bugs
 - Implemented zoom feature
@@ -12,7 +12,7 @@ Based on the original one, the following has been done (As per Version 0.9.3):
 - Allow force fallback to Camera1
 - Write this documentation...
 - **NEW! 0.9.0** Callback to get each frame of camera preview in high FPS
-- **NEW! 0.9.3** Configurable Preview and Capture image max resoultion
+- **NEW! 0.9.4** Configurable Preview and Capture image max resoultion
 
 ## When do I need this library?
 Surprising, I found that there are not much CameraView library out there.  
@@ -39,7 +39,7 @@ Although this library does not have as much functionalities and flexibilities th
 7. Flash light (**But I haven't changed any code about it, nor used it, nor tested it**)
 8. Callback when focus is locked (i.e. You can play animation, if you like, when focus is locked)
 9. **NEW! 0.9.0** Callback of each preview frame, passed to you in `byte[]` with width, height and rotation degrees
-10. **NEW! 0.9.3** Configurable Preview and Capture image max resoultion
+10. **NEW! 0.9.4** Configurable Preview and Capture image max resoultion
 
 ## What this library does NOT offer but you are probably expecting
 
@@ -72,7 +72,7 @@ So, in your AndroidManifest.xml:
 Add to application's build.gradle:
 
 ```
-    implementation 'com.asksira.android:cameraviewplus:0.9.3'
+    implementation 'com.asksira.android:cameraviewplus:0.9.4'
 ```
 
 ### Step 2: Add CameraView to your layout
@@ -257,9 +257,9 @@ CameraViewConfig.isForceCamera1 = true;
 
 ## Release Notes
 
-(Release Notes are not avaiable before v0.9.3.)
+(Release Notes are not avaiable before v0.9.4.)
 
-v0.9.3
+v0.9.4
 1. Fixed aspect ratio not working in Camera2, which is an original bug [here](https://github.com/google/cameraview/pull/177).
 2. Implemented maximum preview width
 3. Implemented maximum image width

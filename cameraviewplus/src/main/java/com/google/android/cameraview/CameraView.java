@@ -73,6 +73,8 @@ public class CameraView extends FrameLayout {
     CameraViewImpl mImpl;
 
     private boolean mAdjustViewBounds;
+    private int maximumWidth = 0;
+    private int maximumPreviewWidth = 0;
 
     private final DisplayOrientationDetector mDisplayOrientationDetector;
 
@@ -97,8 +99,8 @@ public class CameraView extends FrameLayout {
                 R.style.Widget_CameraView);
         mAdjustViewBounds = a.getBoolean(R.styleable.CameraView_android_adjustViewBounds, false);
         String aspectRatio = a.getString(R.styleable.CameraView_cameraAspectRatio);
-        int maximumWidth = a.getInt(R.styleable.CameraView_maximumWidth, 0);
-        int maximumPreviewWidth = a.getInt(R.styleable.CameraView_maximumPreviewWidth, 0);
+        maximumWidth = a.getInt(R.styleable.CameraView_maximumWidth, 0);
+        maximumPreviewWidth = a.getInt(R.styleable.CameraView_maximumPreviewWidth, 0);
         boolean useHighResPicture = a.getBoolean(R.styleable.CameraView_useHighResPicture, maximumWidth == 0);
         int facing = a.getInt(R.styleable.CameraView_facing, FACING_BACK);
         boolean autoFocus = a.getBoolean(R.styleable.CameraView_autoFocus, true);
@@ -274,6 +276,8 @@ public class CameraView extends FrameLayout {
             Parcelable state = onSaveInstanceState();
             // Camera2 uses legacy hardware layer; fall back to Camera1
             mImpl = new Camera1(createPreviewImpl(getContext(), true), getContext());
+            mImpl.setMaximumWidth(maximumWidth);
+            mImpl.setMaximumPreviewWidth(maximumPreviewWidth);
             onRestoreInstanceState(state);
             mImpl.start();
         }
