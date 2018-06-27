@@ -389,15 +389,19 @@ class Camera1 extends CameraViewImpl {
             // Supported preview sizes
             mPreviewSizes.clear();
             for (Camera.Size size : mCameraParameters.getSupportedPreviewSizes()) {
-                mPreviewSizes.add(new Size(size.width, size.height));
+                if (maximumPreviewWidth == 0) {
+                    mPreviewSizes.add(new Size(size.width, size.height));
+                } else if (size.width <= maximumPreviewWidth && size.height <= maximumPreviewWidth) {
+                    mPreviewSizes.add(new Size(size.width, size.height));
+                }
             }
             // Supported picture sizes;
             mPictureSizes.clear();
             for (Camera.Size size : mCameraParameters.getSupportedPictureSizes()) {
                 Log.i("CameraView2", "Picture Size: " + size.toString());
-                if (mMaximumWidth == 0) {
+                if (maximumWidth == 0) {
                     mPictureSizes.add(new Size(size.width, size.height));
-                } else if (size.width < mMaximumWidth && size.height < mMaximumWidth) {
+                } else if (size.width <= maximumWidth && size.height <= maximumWidth) {
                     mPictureSizes.add(new Size(size.width, size.height));
                 }
             }

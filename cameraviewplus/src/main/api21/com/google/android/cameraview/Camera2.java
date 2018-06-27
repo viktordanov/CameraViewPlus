@@ -345,7 +345,11 @@ class Camera2 extends CameraViewImpl {
                 int width = size.getWidth();
                 int height = size.getHeight();
                 if (width <= MAX_PREVIEW_WIDTH && height <= MAX_PREVIEW_HEIGHT) {
-                    mPreviewSizes.add(new Size(width, height));
+                    if (maximumPreviewWidth == 0) {
+                        mPreviewSizes.add(new Size(width, height));
+                    } else if (width <= maximumPreviewWidth && height <= maximumPreviewWidth) {
+                        mPreviewSizes.add(new Size(width, height));
+                    }
                 }
             }
         }
@@ -530,7 +534,11 @@ class Camera2 extends CameraViewImpl {
             int width = size.getWidth();
             int height = size.getHeight();
             if (width <= MAX_PREVIEW_WIDTH && height <= MAX_PREVIEW_HEIGHT) {
-                mPreviewSizes.add(new Size(width, height));
+                if (maximumPreviewWidth == 0) {
+                    mPreviewSizes.add(new Size(width, height));
+                } else if (width <= maximumPreviewWidth && height <= maximumPreviewWidth) {
+                    mPreviewSizes.add(new Size(width, height));
+                }
             }
         }
         mPictureSizes.clear();
@@ -549,9 +557,9 @@ class Camera2 extends CameraViewImpl {
     protected void collectPictureSizes(SizeMap sizes, StreamConfigurationMap map) {
         for (android.util.Size size : map.getOutputSizes(ImageFormat.JPEG)) {
             Log.i("CameraView2", "Picture Size: " + size.toString());
-            if (mMaximumWidth == 0) {
+            if (maximumWidth == 0) {
                 mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
-            } else if (size.getWidth() < mMaximumWidth && size.getHeight() < mMaximumWidth) {
+            } else if (size.getWidth() <= maximumWidth && size.getHeight() <= maximumWidth) {
                 mPictureSizes.add(new Size(size.getWidth(), size.getHeight()));
             }
         }
@@ -567,7 +575,8 @@ class Camera2 extends CameraViewImpl {
         Size largest = mPictureSizes.sizes(mAspectRatio).last();
         mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                 ImageFormat.JPEG, /* maxImages */ 1);
-        mFrameImageReader = ImageReader.newInstance(largest.getWidth() / 4, largest.getHeight() / 4,
+        Size previewLargest = mPreviewSizes.sizes(mAspectRatio).last();
+        mFrameImageReader = ImageReader.newInstance(previewLargest.getWidth(), previewLargest.getHeight(),
                 ImageFormat.YUV_420_888, 1);
         mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
         mFrameImageReader.setOnImageAvailableListener(mOnFrameAvailableListener, mBackgroundHandler);

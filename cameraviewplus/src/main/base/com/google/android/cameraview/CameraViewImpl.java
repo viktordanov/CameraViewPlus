@@ -45,7 +45,8 @@ public abstract class CameraViewImpl implements SensorEventListener {
 
     protected final PreviewImpl mPreview;
 
-    protected int mMaximumWidth = 0;
+    protected int maximumWidth = 0;
+    protected int maximumPreviewWidth = 0;
 
     //Orientation Sensor
     protected SensorManager sensorManager;
@@ -176,11 +177,19 @@ public abstract class CameraViewImpl implements SensorEventListener {
     }
 
     public int getMaximumWidth() {
-        return mMaximumWidth;
+        return maximumWidth;
     }
 
     public void setMaximumWidth(int mMaximumWidth) {
-        this.mMaximumWidth = mMaximumWidth;
+        this.maximumWidth = mMaximumWidth;
+    }
+
+    public int getMaximumPreviewWidth() {
+        return maximumPreviewWidth;
+    }
+
+    public void setMaximumPreviewWidth(int maximumPreviewWidth) {
+        this.maximumPreviewWidth = maximumPreviewWidth;
     }
 
     @Override

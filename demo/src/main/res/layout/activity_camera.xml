@@ -34,7 +34,8 @@
         app:cameraAspectRatio="16:9"
         app:facing="back"
         app:flash="off"
-        app:maximumWidth="2000"/>
+        app:maximumWidth="2000"
+        app:maximumPreviewWidth="1280"/>
 
     <View
         android:id="@+id/shutter_effect"

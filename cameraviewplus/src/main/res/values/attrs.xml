@@ -20,6 +20,7 @@
         <attr name="android:adjustViewBounds"/>
         <!-- Direction the camera faces relative to device screen. -->
         <attr name="maximumWidth" format="integer"/>
+        <attr name="maximumPreviewWidth" format="integer"/>
         <attr name="useHighResPicture" format="boolean"/>
         <attr name="facing" format="enum">
             <!-- The camera device faces the opposite direction as the device's screen. -->

@@ -98,6 +98,7 @@ public class CameraView extends FrameLayout {
         mAdjustViewBounds = a.getBoolean(R.styleable.CameraView_android_adjustViewBounds, false);
         String aspectRatio = a.getString(R.styleable.CameraView_cameraAspectRatio);
         int maximumWidth = a.getInt(R.styleable.CameraView_maximumWidth, 0);
+        int maximumPreviewWidth = a.getInt(R.styleable.CameraView_maximumPreviewWidth, 0);
         boolean useHighResPicture = a.getBoolean(R.styleable.CameraView_useHighResPicture, maximumWidth == 0);
         int facing = a.getInt(R.styleable.CameraView_facing, FACING_BACK);
         boolean autoFocus = a.getBoolean(R.styleable.CameraView_autoFocus, true);
@@ -114,6 +115,7 @@ public class CameraView extends FrameLayout {
             mImpl = new Camera2(preview, context);
         }
         mImpl.setMaximumWidth(maximumWidth);
+        mImpl.setMaximumPreviewWidth(maximumPreviewWidth);
 
         setFacing(facing);
         setAutoFocus(autoFocus);
