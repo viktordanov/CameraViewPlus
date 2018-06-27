@@ -2,7 +2,7 @@
 The aim of this library is to let you integrate camera features to your app, in case using `Intent` to launch default Camera cannot fulfill your requirements, such as overlaying images to your Camera preview.
 
 This is a fork from Google's [CameraView](https://github.com/google/cameraview).  
-Based on the original one, the following has been done (As per Version 0.9.2):
+Based on the original one, the following has been done (As per Version 0.9.3):
 
 - Resolved some bugs
 - Implemented zoom feature
@@ -12,6 +12,7 @@ Based on the original one, the following has been done (As per Version 0.9.2):
 - Allow force fallback to Camera1
 - Write this documentation...
 - **NEW! 0.9.0** Callback to get each frame of camera preview in high FPS
+- **NEW! 0.9.3** Configurable Preview and Capture image max resoultion
 
 ## When do I need this library?
 Surprising, I found that there are not much CameraView library out there.  
@@ -38,6 +39,7 @@ Although this library does not have as much functionalities and flexibilities th
 7. Flash light (**But I haven't changed any code about it, nor used it, nor tested it**)
 8. Callback when focus is locked (i.e. You can play animation, if you like, when focus is locked)
 9. **NEW! 0.9.0** Callback of each preview frame, passed to you in `byte[]` with width, height and rotation degrees
+10. **NEW! 0.9.3** Configurable Preview and Capture image max resoultion
 
 ## What this library does NOT offer but you are probably expecting
 
@@ -70,7 +72,7 @@ So, in your AndroidManifest.xml:
 Add to application's build.gradle:
 
 ```
-    implementation 'com.asksira.android:cameraviewplus:0.9.2'
+    implementation 'com.asksira.android:cameraviewplus:0.9.3'
 ```
 
 ### Step 2: Add CameraView to your layout
@@ -85,17 +87,27 @@ Add to application's build.gradle:
         app:autoFocus="true"
         app:cameraAspectRatio="4:3"
         app:facing="back"
-        app:flash="off"/>
+        app:flash="off"
+        app:maximumWidth="4000"
+        app:maximumPreviewWidth="1280"
+        app:useHighResPicture="false"/>
 ```
         
-| Attribute Name   | Default    | Allowed Values                         |
-|:-----------------|:-----------|:---------------------------------------|
-| autoFocus        | true       | true / false                           |
-| cameraAspectRatio| 4:3        | String (But I suggest only 4:3 or 16:9)|
-| facing           | back       | back / front                           |
-| flash            | auto       | auto / on / off / redEye / torch       |
+| Attribute Name       | Default    | Allowed Values                         |
+|:---------------------|:-----------|:---------------------------------------|
+| autoFocus            | true       | true / false                           |
+| cameraAspectRatio    | 4:3        | String (But I suggest only 4:3 or 16:9)|
+| facing               | back       | back / front                           |
+| flash                | auto       | auto / on / off / redEye / torch       |
+| maximumWidth         | 0          | integers                               |
+| maximumPreviewWidth  | 0          | integers                               |
+| useHighResPicture    | true       | See below                              |
 
 `cameraAspectRatio` is width/height in LANDSCAPE mode. (Thus width is the LONGER side)  
+
+`maximumWidth` and `maximumPreviewWidth` will limit the longer length of the resolution. For example, if you set `aspectRatio="16:9"` and `maximumWidth="2000"`, `3200*1800` will not be used, but `1920*1080` will be used.
+
+If `useHighResPicture` is set to true && your device supports it, it will override `maximumWidth` and will use only super high resolution.
 
 **IMPORTANT: Please use your own ViewGroup to contain CameraView. Otherwise the preview might over-expand to out of what you may expect. I did not spend time on trying to fix this.**
 
@@ -227,6 +239,8 @@ cameraView.setOnFrameListener(new CameraViewImpl.OnFrameListener() {
         });
 ```
 
+`maximumPreviewWidth` will affect the width and height returned in `onFrame()`.
+
 As you can see, I am using `Nv21Image.nv21ToBitmap()` to convert the `byte[]` into a `Bitmap`.  
 This is because the `byte[]` of frames are in NV21 formatting instead of JPEG. This is a must for a high FPS; and the only format of Camera1 API.
 
@@ -240,6 +254,15 @@ For any reason, if you want to fallback to Camera1 even for devices that support
 ```java
 CameraViewConfig.isForceCamera1 = true;
 ```
+
+## Release Notes
+
+(Release Notes are not avaiable before v0.9.3.)
+
+v0.9.3
+1. Fixed aspect ratio not working in Camera2, which is an original bug [here](https://github.com/google/cameraview/pull/177).
+2. Implemented maximum preview width
+3. Implemented maximum image width
 
 ## Want to know more?
 
