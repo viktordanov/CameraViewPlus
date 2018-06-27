@@ -4,6 +4,7 @@
 .DS_Store
 /build
 /captures
+/cameraviewplus/build
 
 .idea/
 !.idea/copyright/*.xml
