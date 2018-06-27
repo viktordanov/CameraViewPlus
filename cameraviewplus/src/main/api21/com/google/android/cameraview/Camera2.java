@@ -336,22 +336,36 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     Set<AspectRatio> getSupportedAspectRatios() {
+        if (mPreviewSizes.isEmpty()) {
+            chooseCameraIdByFacing();
+            StreamConfigurationMap map = mCameraCharacteristics.get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            if (map == null) return mPreviewSizes.ratios();
+            for (android.util.Size size : map.getOutputSizes(mPreview.getOutputClass())) {
+                int width = size.getWidth();
+                int height = size.getHeight();
+                if (width <= MAX_PREVIEW_WIDTH && height <= MAX_PREVIEW_HEIGHT) {
+                    mPreviewSizes.add(new Size(width, height));
+                }
+            }
+        }
         return mPreviewSizes.ratios();
     }
 
     @Override
-    boolean setAspectRatio(AspectRatio ratio) {
-        if (ratio == null || ratio.equals(mAspectRatio) ||
-                !mPreviewSizes.ratios().contains(ratio)) {
-            // TODO: Better error handling
+    boolean setAspectRatio(AspectRatio ratio, boolean isInitializing) {
+        if (ratio == null || ratio.equals(mAspectRatio)) return false;
+        if (!getSupportedAspectRatios().contains(ratio)) {
             return false;
         }
         mAspectRatio = ratio;
-        prepareImageReader();
-        if (mCaptureSession != null) {
-            mCaptureSession.close();
-            mCaptureSession = null;
-            startCaptureSession();
+        if (!isInitializing) {
+            prepareImageReader();
+            if (mCaptureSession != null) {
+                mCaptureSession.close();
+                mCaptureSession = null;
+                startCaptureSession();
+            }
         }
         return true;
     }

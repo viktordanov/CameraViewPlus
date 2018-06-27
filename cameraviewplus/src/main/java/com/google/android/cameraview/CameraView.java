@@ -115,14 +115,14 @@ public class CameraView extends FrameLayout {
         }
         mImpl.setMaximumWidth(maximumWidth);
 
-        if (aspectRatio != null) {
-            setAspectRatio(AspectRatio.parse(aspectRatio));
-        } else {
-            setAspectRatio(Constants.DEFAULT_ASPECT_RATIO);
-        }
         setFacing(facing);
         setAutoFocus(autoFocus);
         setFlash(flash);
+        if (aspectRatio != null) {
+            setAspectRatio(AspectRatio.parse(aspectRatio), true);
+        } else {
+            setAspectRatio(Constants.DEFAULT_ASPECT_RATIO, true);
+        }
 
         // Display orientation detector
         mDisplayOrientationDetector = new DisplayOrientationDetector(context) {
@@ -257,7 +257,7 @@ public class CameraView extends FrameLayout {
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
         setFacing(ss.facing);
-        setAspectRatio(ss.ratio);
+        setAspectRatio(ss.ratio, true);
         setAutoFocus(ss.autoFocus);
         setFlash(ss.flash);
     }
@@ -357,8 +357,8 @@ public class CameraView extends FrameLayout {
      *
      * @param ratio The {@link AspectRatio} to be set.
      */
-    public void setAspectRatio(@NonNull AspectRatio ratio) {
-        if (mImpl.setAspectRatio(ratio)) {
+    public void setAspectRatio(@NonNull AspectRatio ratio, boolean isInitializing) {
+        if (mImpl.setAspectRatio(ratio, isInitializing)) {
             requestLayout();
         }
     }

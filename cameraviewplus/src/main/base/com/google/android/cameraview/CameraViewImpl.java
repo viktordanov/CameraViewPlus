@@ -116,7 +116,7 @@ public abstract class CameraViewImpl implements SensorEventListener {
     /**
      * @return {@code true} if the aspect ratio was changed.
      */
-    abstract boolean setAspectRatio(AspectRatio ratio);
+    abstract boolean setAspectRatio(AspectRatio ratio, boolean isInitializing);
 
     abstract AspectRatio getAspectRatio();
 

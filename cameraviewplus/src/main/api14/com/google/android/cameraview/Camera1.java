@@ -221,7 +221,7 @@ class Camera1 extends CameraViewImpl {
     }
 
     @Override
-    boolean setAspectRatio(AspectRatio ratio) {
+    boolean setAspectRatio(AspectRatio ratio, boolean isInitializing) {
         if (mAspectRatio == null || !isCameraOpened()) {
             // Handle this later when camera is opened
             mAspectRatio = ratio;
