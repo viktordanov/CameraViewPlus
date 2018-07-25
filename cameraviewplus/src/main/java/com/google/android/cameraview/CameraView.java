@@ -73,6 +73,7 @@ public class CameraView extends FrameLayout {
     CameraViewImpl mImpl;
 
     private boolean mAdjustViewBounds;
+    private boolean mZoomOnPitch = true;
     private int maximumWidth = 0;
     private int maximumPreviewWidth = 0;
 
@@ -231,10 +232,12 @@ public class CameraView extends FrameLayout {
 
         int action = event.getActionMasked();
         if (event.getPointerCount() == 2) { //Multi touch.
-            if (action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_UP) {
-                mImpl.onPinchFingerUp();
-            } else {
-                mImpl.zoom(event);
+            if (mZoomOnPitch) {
+                if (action == MotionEvent.ACTION_POINTER_UP || action == MotionEvent.ACTION_UP) {
+                    mImpl.onPinchFingerUp();
+                } else {
+                    mImpl.zoom(event);
+                }
             }
             return true;
         } else { //Single touch point, needs to return true in order to detect one more touch point
@@ -458,6 +461,15 @@ public class CameraView extends FrameLayout {
         if (mImpl != null) {
             mImpl.setPixelsPerOneZoomLevel(pixels);
         }
+    }
+
+    /**
+     * Enables or disables the zoom on pitch.
+     *
+     * @param zoomOnPitch {@code true} to enable zoom on pitch. {@code false} to disable it.
+     */
+    public void setZoomOnPitch(boolean zoomOnPitch) {
+        mZoomOnPitch = zoomOnPitch;
     }
 
     public int getDefaultOrientation () {
