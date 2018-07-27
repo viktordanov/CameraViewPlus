@@ -57,5 +57,7 @@
             -->
             <enum name="redEye" value="4"/>
         </attr>
+        <!-- The zoom status. -->
+        <attr name="enableZoom" format="boolean" />
     </declare-styleable>
 </resources>
