@@ -433,6 +433,12 @@ public class CameraView extends FrameLayout {
         }
     }
 
+    public void setOnPictureBytesAvailableListener (CameraViewImpl.OnPictureBytesAvailableListener pictureBytesAvailableListener) {
+        if (mImpl != null) {
+            mImpl.setOnPictureBytesAvailableListener(pictureBytesAvailableListener);
+        }
+    }
+
     public void setOnFocusLockedListener (CameraViewImpl.OnFocusLockedListener focusLockedListener) {
         if (mImpl != null) {
             mImpl.setOnFocusLockedListener(focusLockedListener);

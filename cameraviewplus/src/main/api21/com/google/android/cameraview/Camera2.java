@@ -181,6 +181,7 @@ class Camera2 extends CameraViewImpl {
                     byte[] data = new byte[buffer.capacity()];
                     buffer.get(data);
                     byteArrayToBitmap(data);
+                    if (pictureBytesCallback != null) pictureBytesCallback.onPictureBytesAvailable(data, getRotationDegrees());
                 }
                 image.close();
             }

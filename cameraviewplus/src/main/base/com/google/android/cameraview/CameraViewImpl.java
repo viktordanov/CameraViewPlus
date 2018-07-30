@@ -38,6 +38,7 @@ public abstract class CameraViewImpl implements SensorEventListener {
     protected int pixelsPerOneZoomLevel = 80;
 
     protected OnPictureTakenListener pictureCallback;
+    protected OnPictureBytesAvailableListener pictureBytesCallback;
     protected OnTurnCameraFailListener turnFailCallback;
     protected OnCameraErrorListener cameraErrorCallback;
     protected OnFocusLockedListener focusLockedCallback;
@@ -81,6 +82,10 @@ public abstract class CameraViewImpl implements SensorEventListener {
 
     public void setOnPictureTakenListener (OnPictureTakenListener pictureCallback) {
         this.pictureCallback = pictureCallback;
+    }
+
+    public void setOnPictureBytesAvailableListener (OnPictureBytesAvailableListener bytesCallback) {
+        this.pictureBytesCallback = bytesCallback;
     }
 
     public void setOnFocusLockedListener (OnFocusLockedListener focusLockedListener) {
@@ -154,6 +159,7 @@ public abstract class CameraViewImpl implements SensorEventListener {
     }
 
     protected void byteArrayToBitmap (final byte[] data) {
+        if (pictureCallback == null) return; //There's no point of wasting resources if there is no callback registered
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
@@ -161,11 +167,9 @@ public abstract class CameraViewImpl implements SensorEventListener {
                 options.inMutable = true;
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
                 if (getFacing() == CameraView.FACING_FRONT) {
-                    if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap),
-                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap), getRotationDegrees());
                 } else {
-                    if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap,
-                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap, getRotationDegrees());
                 }
             }
         });
@@ -214,8 +218,16 @@ public abstract class CameraViewImpl implements SensorEventListener {
         orientationCalculator.update(orientationAngles[1], orientationAngles[2]);
     }
 
+    protected int getRotationDegrees () {
+        return -(orientationCalculator.getOrientation() + getCameraDefaultOrientation());
+    }
+
     public interface OnPictureTakenListener {
         void onPictureTaken (Bitmap bitmap, int rotationDegrees);
+    }
+
+    public interface OnPictureBytesAvailableListener {
+        void onPictureBytesAvailable (byte[] bytes, int rotationDegrees);
     }
 
     public interface OnTurnCameraFailListener {

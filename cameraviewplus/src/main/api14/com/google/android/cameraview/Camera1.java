@@ -310,6 +310,7 @@ class Camera1 extends CameraViewImpl {
                     @Override
                     public void onPictureTaken(byte[] data, Camera camera) {
                         isPictureCaptureInProgress.set(false);
+                        if (pictureBytesCallback != null) pictureBytesCallback.onPictureBytesAvailable(data, getRotationDegrees());
                         byteArrayToBitmap(data);
                         camera.cancelAutoFocus();
                         camera.startPreview();
