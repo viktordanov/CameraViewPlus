@@ -64,7 +64,7 @@ ext {
     siteUrl = 'https://github.com/siralam/CameraViewPlus'
     gitUrl = 'https://github.com/siralam/CameraViewPlus.git'
 
-    libraryVersion = '0.9.4'
+    libraryVersion = '0.9.5'
 
     developerId = 'siralam'
     developerName = 'Sira Lam'

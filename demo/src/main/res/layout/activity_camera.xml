@@ -35,7 +35,8 @@
         app:facing="back"
         app:flash="off"
         app:maximumWidth="2000"
-        app:maximumPreviewWidth="1280"/>
+        app:maximumPreviewWidth="1280"
+        app:enableZoom="true"/>
 
     <View
         android:id="@+id/shutter_effect"
