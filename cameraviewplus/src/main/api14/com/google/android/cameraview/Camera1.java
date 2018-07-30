@@ -20,8 +20,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v4.util.SparseArrayCompat;
@@ -98,10 +96,7 @@ class Camera1 extends CameraViewImpl {
 
     @Override
     boolean start() {
-        sensorManager.registerListener(
-                this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(
-                this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
+        orientation.startListening(orientationListener);
         chooseCamera();
         openCamera();
         if (mPreview.isReady()) {
@@ -116,7 +111,7 @@ class Camera1 extends CameraViewImpl {
 
     @Override
     void stop() {
-        sensorManager.unregisterListener(this);
+        orientation.stopListening();
         latestFrameWidth = 0;
         latestFrameHeight = 0;
         stopBackgroundThread();
@@ -168,7 +163,7 @@ class Camera1 extends CameraViewImpl {
                                 onFrameCallback.onFrame(latestFrameData,
                                         latestFrameWidth,
                                         latestFrameHeight,
-                                        -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                                        getRotationDegrees());
                             }
                         });
                     }

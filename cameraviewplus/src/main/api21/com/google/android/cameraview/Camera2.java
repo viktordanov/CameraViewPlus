@@ -20,8 +20,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -211,7 +209,7 @@ class Camera2 extends CameraViewImpl {
                                     onFrameCallback.onFrame(latestFrameData,
                                             latestFrameWidth,
                                             latestFrameHeight,
-                                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                                            getRotationDegrees());
                                 }
                             });
                         }
@@ -274,10 +272,7 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     boolean start() {
-        sensorManager.registerListener(
-                this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(
-                this, sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD), SensorManager.SENSOR_DELAY_NORMAL);
+        orientation.startListening(orientationListener);
         if (!chooseCameraIdByFacing()) {
             return false;
         }
@@ -290,9 +285,7 @@ class Camera2 extends CameraViewImpl {
 
     @Override
     void stop() {
-        if (sensorManager != null) {
-            sensorManager.unregisterListener(this);
-        }
+        orientation.stopListening();
         if (mCaptureSession != null) {
             mCaptureSession.close();
             mCaptureSession = null;
