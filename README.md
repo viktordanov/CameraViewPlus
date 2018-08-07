@@ -5,7 +5,7 @@ This is a fork from Google's [CameraView](https://github.com/google/cameraview).
 Based on the original one, the following has been done (As per Version 0.9.4):
 
 - Resolved some bugs
-- Implemented zoom feature
+- Implemented zoom feature (Configurable since v0.9.5)
 - Improved API friendliness
 - Changed return image from `byte[]` to `Bitmap`, with rotation degrees
 - Added camera event listeners
@@ -72,7 +72,7 @@ So, in your AndroidManifest.xml:
 Add to application's build.gradle:
 
 ```
-    implementation 'com.asksira.android:cameraviewplus:0.9.4'
+    implementation 'com.asksira.android:cameraviewplus:0.9.5'
 ```
 
 ### Step 2: Add CameraView to your layout
@@ -90,7 +90,8 @@ Add to application's build.gradle:
         app:flash="off"
         app:maximumWidth="4000"
         app:maximumPreviewWidth="1280"
-        app:useHighResPicture="false"/>
+        app:useHighResPicture="false"
+        app:enableZoom="true"/>
 ```
         
 | Attribute Name       | Default    | Allowed Values                         |
@@ -102,6 +103,7 @@ Add to application's build.gradle:
 | maximumWidth         | 0          | integers                               |
 | maximumPreviewWidth  | 0          | integers                               |
 | useHighResPicture    | true       | See below                              |
+| enableZoom           | true       | true/ false                            |
 
 `cameraAspectRatio` is width/height in LANDSCAPE mode. (Thus width is the LONGER side)  
 
@@ -258,6 +260,11 @@ CameraViewConfig.isForceCamera1 = true;
 ## Release Notes
 
 (Release Notes are not avaiable before v0.9.4.)
+
+v0.9.5
+1. Added optional callback to get raw `bytes[]` instead of `Bitmap`. (#9)
+2. Tried to resolve #4 orientation not detected if device does not have a magnetometer.
+3. Merged #7 So that user can now disable zoom feature.
 
 v0.9.4
 1. Fixed aspect ratio not working in Camera2, which is an original bug [here](https://github.com/google/cameraview/pull/177).

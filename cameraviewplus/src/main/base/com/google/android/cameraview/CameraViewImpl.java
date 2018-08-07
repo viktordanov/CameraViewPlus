@@ -20,17 +20,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.Set;
 
-public abstract class CameraViewImpl implements SensorEventListener {
+public abstract class CameraViewImpl {
 
     /**
      * The distance between 2 fingers (in pixel) needed in order for zoom level to increase by 1x.
@@ -38,6 +34,7 @@ public abstract class CameraViewImpl implements SensorEventListener {
     protected int pixelsPerOneZoomLevel = 80;
 
     protected OnPictureTakenListener pictureCallback;
+    protected OnPictureBytesAvailableListener pictureBytesCallback;
     protected OnTurnCameraFailListener turnFailCallback;
     protected OnCameraErrorListener cameraErrorCallback;
     protected OnFocusLockedListener focusLockedCallback;
@@ -48,27 +45,21 @@ public abstract class CameraViewImpl implements SensorEventListener {
     protected int maximumWidth = 0;
     protected int maximumPreviewWidth = 0;
 
-    //Orientation Sensor
-    protected SensorManager sensorManager;
-    protected Sensor accelerometerSensor;
-    protected Sensor magnetometerSensor;
-    protected float[] accelerometerReading = new float[3];
-    protected float[] magnetometerReading = new float[3];
-    protected float[] rotationMatrix = new float[9];
-    protected float[] orientationAngles = new float[3];
-    protected OrientationCalculator orientationCalculator;
+    protected Orientation orientation;
+    protected int currentOrientationDegrees;
+    protected Orientation.Listener orientationListener = new Orientation.Listener() {
+        @Override
+        public void onOrientationChanged(float pitch, float roll) {
+            currentOrientationDegrees = pitchAndRollToDegrees(pitch, roll);
+        }
+    };
 
     protected Size mPreviewSizeSelected;
     protected Size mPictureSizeSelected;
 
     CameraViewImpl(PreviewImpl preview, Context context) {
         mPreview = preview;
-        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) {
-            accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            magnetometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        }
-        orientationCalculator = new OrientationCalculator();
+        orientation = new Orientation(context, 100);
     }
 
     View getView() {
@@ -83,6 +74,10 @@ public abstract class CameraViewImpl implements SensorEventListener {
 
     public void setOnPictureTakenListener (OnPictureTakenListener pictureCallback) {
         this.pictureCallback = pictureCallback;
+    }
+
+    public void setOnPictureBytesAvailableListener (OnPictureBytesAvailableListener bytesCallback) {
+        this.pictureBytesCallback = bytesCallback;
     }
 
     public void setOnFocusLockedListener (OnFocusLockedListener focusLockedListener) {
@@ -156,6 +151,7 @@ public abstract class CameraViewImpl implements SensorEventListener {
     }
 
     protected void byteArrayToBitmap (final byte[] data) {
+        if (pictureCallback == null) return; //There's no point of wasting resources if there is no callback registered
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
@@ -163,11 +159,9 @@ public abstract class CameraViewImpl implements SensorEventListener {
                 options.inMutable = true;
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
                 if (getFacing() == CameraView.FACING_FRONT) {
-                    if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap),
-                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(mirrorBitmap(bitmap), getRotationDegrees());
                 } else {
-                    if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap,
-                            -(orientationCalculator.getOrientation() + getCameraDefaultOrientation()));
+                    if (pictureCallback != null) pictureCallback.onPictureTaken(bitmap, getRotationDegrees());
                 }
             }
         });
@@ -202,30 +196,28 @@ public abstract class CameraViewImpl implements SensorEventListener {
         return mPictureSizeSelected;
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor == accelerometerSensor) {
-            System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.length);
-            updateOrientation();
-        } else if (event.sensor == magnetometerSensor) {
-            System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.length);
-            updateOrientation();
+    protected int getRotationDegrees () {
+        return -(currentOrientationDegrees + getCameraDefaultOrientation());
+    }
+
+    private int pitchAndRollToDegrees (float pitch, float roll) {
+        if (roll < -135 || roll > 135) {
+            return 180; //Home button on the top
+        } else if (roll > 45 && roll <= 135) {
+            return 270; //Home button on the right
+        } else if (roll >= -135 && roll < -45) {
+            return 90; //Home button on the left
+        } else {
+            return 0; //Portrait
         }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-    protected void updateOrientation () {
-        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
-        SensorManager.getOrientation(rotationMatrix, orientationAngles);
-        orientationCalculator.update(orientationAngles[1], orientationAngles[2]);
     }
 
     public interface OnPictureTakenListener {
         void onPictureTaken (Bitmap bitmap, int rotationDegrees);
+    }
+
+    public interface OnPictureBytesAvailableListener {
+        void onPictureBytesAvailable (byte[] bytes, int rotationDegrees);
     }
 
     public interface OnTurnCameraFailListener {
