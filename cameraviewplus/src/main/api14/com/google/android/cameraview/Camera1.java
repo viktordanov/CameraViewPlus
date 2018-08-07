@@ -54,14 +54,12 @@ class Camera1 extends CameraViewImpl {
 
     private final AtomicBoolean isPictureCaptureInProgress = new AtomicBoolean(false);
 
-    Camera mCamera;
-
+    private Camera mCamera;
     private Camera.Parameters mCameraParameters;
 
     private final Camera.CameraInfo mCameraInfo = new Camera.CameraInfo();
 
     private final SizeMap mPreviewSizes = new SizeMap();
-
     private final SizeMap mPictureSizes = new SizeMap();
 
     private AspectRatio mAspectRatio;
@@ -79,7 +77,6 @@ class Camera1 extends CameraViewImpl {
     private Handler mFrameHandler;
     private HandlerThread mFrameThread;
 
-    //Zoom
     protected Float mZoomDistance;
 
     Camera1(PreviewImpl preview, Context context) {
@@ -442,16 +439,16 @@ class Camera1 extends CameraViewImpl {
                 mAspectRatio = chooseAspectRatio();
                 sizes = mPreviewSizes.sizes(mAspectRatio);
             }
-            Size size = chooseOptimalSize(sizes);
+            mPreviewSizeSelected = chooseOptimalSize(sizes);
 
             // Always re-apply camera parameters
             // Largest picture size in this ratio
-            final Size pictureSize = mPictureSizes.sizes(mAspectRatio).last();
+            mPictureSizeSelected = mPictureSizes.sizes(mAspectRatio).last();
             if (mShowingPreview) {
                 mCamera.stopPreview();
             }
-            mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
-            mCameraParameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
+            mCameraParameters.setPreviewSize(mPreviewSizeSelected.getWidth(), mPreviewSizeSelected.getHeight());
+            mCameraParameters.setPictureSize(mPictureSizeSelected.getWidth(), mPictureSizeSelected.getHeight());
             mCameraParameters.setRotation(mDisplayOrientation);
             setAutoFocusInternal(mAutoFocus);
             setFlashInternal(mFlash);

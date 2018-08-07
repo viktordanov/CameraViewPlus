@@ -58,6 +58,8 @@ public abstract class CameraViewImpl implements SensorEventListener {
     protected float[] orientationAngles = new float[3];
     protected OrientationCalculator orientationCalculator;
 
+    protected Size mPreviewSizeSelected;
+    protected Size mPictureSizeSelected;
 
     CameraViewImpl(PreviewImpl preview, Context context) {
         mPreview = preview;
@@ -190,6 +192,14 @@ public abstract class CameraViewImpl implements SensorEventListener {
 
     public void setMaximumPreviewWidth(int maximumPreviewWidth) {
         this.maximumPreviewWidth = maximumPreviewWidth;
+    }
+
+    public Size getPreviewSize() {
+        return mPreviewSizeSelected;
+    }
+
+    public Size getPictureSize() {
+        return mPictureSizeSelected;
     }
 
     @Override
