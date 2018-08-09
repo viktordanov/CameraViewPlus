@@ -54,6 +54,9 @@ public abstract class CameraViewImpl {
         }
     };
 
+    protected Size mPreviewSizeSelected;
+    protected Size mPictureSizeSelected;
+
     CameraViewImpl(PreviewImpl preview, Context context) {
         mPreview = preview;
         orientation = new Orientation(context, 100);
@@ -183,6 +186,14 @@ public abstract class CameraViewImpl {
 
     public void setMaximumPreviewWidth(int maximumPreviewWidth) {
         this.maximumPreviewWidth = maximumPreviewWidth;
+    }
+
+    public Size getPreviewSize() {
+        return mPreviewSizeSelected;
+    }
+
+    public Size getPictureSize() {
+        return mPictureSizeSelected;
     }
 
     protected int getRotationDegrees () {

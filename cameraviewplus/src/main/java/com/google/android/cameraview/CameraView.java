@@ -427,6 +427,26 @@ public class CameraView extends FrameLayout {
         return mImpl.getFlash();
     }
 
+    /**
+     * Returns the dimensions setting for preview pictures.
+     *
+     * @return a Size object with the width and height setting
+     *          for the preview picture
+     */
+    public Size getPreviewSize() {
+        return mImpl.getPreviewSize();
+    }
+
+    /**
+     * Returns the dimensions setting for pictures.
+     *
+     * @return a Size object with the width and height setting
+     *          for the picture
+     */
+    public Size getPictureSize() {
+        return mImpl.getPictureSize();
+    }
+
     public void setOnPictureTakenListener (CameraViewImpl.OnPictureTakenListener pictureTakenListener) {
         if (mImpl != null) {
             mImpl.setOnPictureTakenListener(pictureTakenListener);
