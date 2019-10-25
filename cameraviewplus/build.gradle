@@ -15,11 +15,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
@@ -38,8 +38,8 @@ android {
 }
 
 dependencies {
-    implementation "com.android.support:support-annotations:27.1.1"
-    implementation "com.android.support:support-v4:27.1.1"
+    implementation "com.android.support:support-annotations:28.0.0"
+    implementation "com.android.support:support-v4:28.0.0"
 
     // Tests
     testImplementation 'junit:junit:4.12'
@@ -64,7 +64,7 @@ ext {
     siteUrl = 'https://github.com/siralam/CameraViewPlus'
     gitUrl = 'https://github.com/siralam/CameraViewPlus.git'
 
-    libraryVersion = '0.9.5'
+    libraryVersion = '0.9.6'
 
     developerId = 'siralam'
     developerName = 'Sira Lam'
